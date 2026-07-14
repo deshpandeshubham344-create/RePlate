@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>RePlate Live Tracking</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+  <style>
+    body { margin: 0; }
+    #map { height: 100vh; width: 100%; }
+
+    #infoPanel {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background: white;
+      padding: 15px;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+      z-index: 9999;
+      font-family: Arial;
+    }
+
+    #statusText { font-weight: bold; }
+    #etaText, #distanceText { color: gray; }
+  </style>
+</head>
+
+<body>
+
+<div id="map"></div>
+
+<div id="infoPanel">
+  <div id="statusText">🚚 Tracking...</div>
+  <div id="etaText">ETA: --</div>
+  <div id="distanceText">Distance: -- km</div>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+
+const params = new URLSearchParams(window.location.search);
+const FOOD_ID = params.get("foodId");
+const TOKEN = localStorage.getItem("token");
+
+const map = L.map('map').setView([18.5204, 73.8567], 13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+// ================= ICONS =================
+const volunteerIcon = L.icon({
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/744/744465.png",
+  iconSize: [40, 40]
+});
+
+const restaurantIcon = L.icon({
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/1046/1046784.png",
+  iconSize: [35, 35]
+});
+
+const ngoIcon = L.icon({
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/3177/3177361.png",
+  iconSize: [35, 35]
+});
+
+// ================= GLOBALS =================
+let marker;
+let routeLine;
+let latestData = null;
+
+// ================= UPDATE MARKER =================
+function updateMarker(lat, lng) {
+  if (!marker) {
+    marker = L.marker([lat, lng], { icon: volunteerIcon })
+      .addTo(map)
+      .bindPopup("🚗 Volunteer");
+  } else {
+    marker.setLatLng([lat, lng]);
+  }
+
+  map.panTo([lat, lng]);
+}
+
+// ================= FETCH ROUTE =================
+async function fetchRoute() {
+  try {
+    const res = await fetch(`http://localhost:5000/api/food/route/${FOOD_ID}`, {
+      headers: { Authorization: "Bearer " + TOKEN }
+    });
+
+    const data = await res.json();
+    latestData = data;
+
+    console.log("MAP DATA:", data);
+
+    // ================= STATUS =================
+    let statusText = "⏳ Waiting...";
+
+  if (data.status === "assigned" && data.currentLocation && data.restaurantLocation) {
+
+  const dist = calculateDistance(
+    data.currentLocation.lat,
+    data.currentLocation.lng,
+    data.restaurantLocation.lat,
+    data.restaurantLocation.lng
+  );
+
+  // 🔥 WHEN REACHED
+  if (dist < 0.2) {
+
+    statusText = "📍 Reached Restaurant";
+
+    // 🔥 STOP INTERVALS
+    clearInterval(window.routeInterval);
+    clearInterval(window.statsInterval);
+
+    // 🔥 SHOW MESSAGE
+    document.getElementById("statusText").innerText =
+      "📍 Reached Restaurant - Redirecting...";
+
+    // 🔥 REDIRECT
+    setTimeout(() => {
+      window.location.href = "dashboard.html";
+    }, 1000);
+
+    return;
+
+  } else {
+    statusText = "📍 Heading to Restaurant";
+  }
+}
+
+    else if (data.status === "picked" && data.currentLocation && data.ngoLocation) {
+      const dist = calculateDistance(
+        data.currentLocation.lat,
+        data.currentLocation.lng,
+        data.ngoLocation.lat,
+        data.ngoLocation.lng
+      );
+
+      statusText = dist < 0.2 ? "🏢 Reached NGO" : "🚚 Delivering to NGO";
+    }
+
+   else if (data.status === "completed") {
+  statusText = "✅ Delivery Completed";
+
+  // 🔥 STOP LOOPS
+  clearInterval(window.routeInterval);
+  clearInterval(window.statsInterval);
+
+  // 🔥 SHOW MESSAGE
+  document.getElementById("statusText").innerText = "✅ Delivery Completed - Redirecting...";
+
+  // 🔥 REDIRECT
+  setTimeout(() => {
+    window.location.href = "dashboard.html";
+  }, 1000);
+
+  return;
+}
+
+    document.getElementById("statusText").innerText = statusText;
+
+    // ================= UPDATE MARKER =================
+    if (data.currentLocation && data.currentLocation.lat != null) {
+      updateMarker(data.currentLocation.lat, data.currentLocation.lng);
+    }
+
+    // ================= ROUTE =================
+    if (data.route && data.route.length > 0) {
+
+      if (routeLine) {
+        map.removeLayer(routeLine);
+      }
+
+      routeLine = L.polyline(data.route, {
+        color: "blue",
+        weight: 6
+      }).addTo(map);
+    }
+
+    // ================= DESTINATION MARKERS =================
+    if (window.restaurantMarker) map.removeLayer(window.restaurantMarker);
+    if (window.ngoMarker) map.removeLayer(window.ngoMarker);
+
+    if (data.status === "assigned" && data.restaurantLocation) {
+      window.restaurantMarker = L.marker(
+        [data.restaurantLocation.lat, data.restaurantLocation.lng],
+        { icon: restaurantIcon }
+      ).addTo(map);
+    }
+
+    else if (data.status === "picked" && data.ngoLocation) {
+      window.ngoMarker = L.marker(
+        [data.ngoLocation.lat, data.ngoLocation.lng],
+        { icon: ngoIcon }
+      ).addTo(map);
+    }
+
+  } catch (err) {
+    console.log("Route error:", err);
+  }
+}
+
+// ================= DISTANCE =================
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+
+  const dLat = (lat2 - lat1) * Math.PI/180;
+  const dLon = (lon2 - lon1) * Math.PI/180;
+
+  const a =
+    Math.sin(dLat/2)**2 +
+    Math.cos(lat1*Math.PI/180) *
+    Math.cos(lat2*Math.PI/180) *
+    Math.sin(dLon/2)**2;
+
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// ================= ETA =================
+function fetchLiveStats() {
+
+  if (!latestData || !latestData.currentLocation) return;
+
+  const curr = latestData.currentLocation;
+
+  let dest = latestData.status === "assigned"
+    ? latestData.restaurantLocation
+    : latestData.ngoLocation;
+
+  if (!dest) return;
+
+  const dist = calculateDistance(
+    curr.lat,
+    curr.lng,
+    dest.lat,
+    dest.lng
+  );
+
+  document.getElementById("distanceText").innerText =
+    "Distance: " + dist.toFixed(2) + " km";
+
+  document.getElementById("etaText").innerText =
+    "ETA: " + Math.ceil(dist * 3) + " mins";
+}
+
+// ================= LOOPS =================
+window.routeInterval = setInterval(fetchRoute, 3000);
+window.statsInterval = setInterval(fetchLiveStats, 2000);
+
+window.history.pushState(null, "", window.location.href);
+
+window.onpopstate = function () {
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    window.location.href = "dashboard.html";
+  } else {
+    window.location.href = "index.html";
+  }
+};
+</script>
+</body>
+</html>

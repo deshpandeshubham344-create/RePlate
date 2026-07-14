@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Post Food - RePlate</title>
+
+  <style>
+   * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* BODY */
+body {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 🔥 BACKGROUND IMAGE (DIFFERENT) */
+body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background: url("https://images.unsplash.com/photo-1600891964599-f61ba0e24092");
+  background-size: cover;
+  background-position: center;
+
+  filter: blur(5px);
+  transform: scale(1.1);
+
+  z-index: -2;
+}
+
+/* DARK OVERLAY */
+body::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: -1;
+}
+
+/* GLASS CONTAINER */
+.container {
+  width: 360px;
+  padding: 30px 25px;
+
+  border-radius: 16px;
+
+  background: rgba(255,255,255,0.2);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.3);
+
+  box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+
+  text-align: center;
+}
+
+/* HEADING */
+.container h2 {
+  color: #ffffff;
+  margin-bottom: 15px;
+}
+
+/* INPUTS */
+input, textarea {
+  width: 100%;
+  padding: 11px;
+  margin: 8px 0;
+
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.3);
+
+  background: rgba(255,255,255,0.2);
+  color: white;
+
+  outline: none;
+  transition: 0.3s;
+}
+
+/* PLACEHOLDER */
+input::placeholder,
+textarea::placeholder {
+  color: rgba(255,255,255,0.7);
+}
+
+/* FOCUS */
+input:focus, textarea:focus {
+  border-color: #4ade80;
+  box-shadow: 0 0 8px rgba(74,222,128,0.5);
+}
+
+/* FILE INPUT */
+input[type="file"] {
+  background: rgba(255,255,255,0.2);
+  color: white;
+  cursor: pointer;
+}
+
+/* BUTTON */
+button {
+  width: 100%;
+  padding: 13px;
+
+  background: linear-gradient(45deg,#22c55e,#16a34a);
+  color: white;
+
+  border: none;
+  border-radius: 8px;
+
+  font-size: 16px;
+  font-weight: 600;
+
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+/* HOVER */
+button:hover {
+  transform: scale(1.05);
+}
+
+/* IMAGE PREVIEW */
+#preview {
+  width: 100%;
+  max-height: 120px;
+  object-fit: cover;
+
+  border-radius: 10px;
+  margin-top: 10px;
+
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+#toast {
+  position: fixed;   /* 🔥 IMPORTANT */
+  bottom: 25px;
+  right: 25px;
+
+  padding: 14px 20px;
+  border-radius: 10px;
+
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+
+  font-size: 14px;
+  font-weight: 500;
+
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+
+  opacity: 0;
+  transform: translateY(20px);
+
+  transition: all 0.3s ease;
+
+  z-index: 9999;  /* 🔥 VERY IMPORTANT */
+}
+
+/* SHOW */
+#toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2>Post Food</h2>
+
+  <input type="text" id="foodName" placeholder="Food Name" />
+  <input type="text" id="quantity" placeholder="Quantity" />
+  <input type="datetime-local" id="pickupTime" />
+  <textarea id="description" placeholder="Description"></textarea>
+  <input type="file" id="foodImage" accept="image/*" capture="environment">
+  <img id="preview" style="display:none;">
+  <button onclick="createFood()">Post Food</button>
+  <div id="toast"></div>
+</div>
+
+<script>
+
+const token = localStorage.getItem("token");
+
+// 🚀 CREATE FOOD (CLEAN VERSION)
+async function createFood() {
+  try {
+
+    const formData = new FormData();
+
+    formData.append("foodName", document.getElementById("foodName").value);
+    formData.append("quantity", document.getElementById("quantity").value);
+    formData.append("pickupTime", document.getElementById("pickupTime").value);
+    formData.append("description", document.getElementById("description").value);
+
+    const file = document.getElementById("foodImage").files[0];
+    if (file) {
+      formData.append("image", file);
+    }
+
+    const res = await fetch("http://localhost:5000/api/food/create", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + token
+      },
+      body: formData
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      showToast("❌ Failed to post food", "error");
+      return;
+    }
+
+    // ✅ SUCCESS
+    showToast("✅ Food posted successfully");
+
+    // 🔥 REDIRECT AFTER SMALL DELAY
+    setTimeout(() => {
+      window.location.href = "dashboard.html";
+    }, 1000);
+
+  } catch (err) {
+    console.log(err);
+    showToast("❌ Server error", "error");
+  }
+}
+
+function showToast(message) {
+  const toast = document.getElementById("toast");
+
+  toast.innerText = "✅ " + message;
+  toast.classList.add("show");
+
+  setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2500);
+}
+document.getElementById("foodImage").addEventListener("change", function(e) {
+  const file = e.target.files[0];
+
+  if (file) {
+    const preview = document.getElementById("preview");
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = "block";
+  }
+});
+window.history.pushState(null, "", window.location.href);
+
+window.onpopstate = function () {
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    window.location.href = "dashboard.html";
+  } else {
+    window.location.href = "index.html";
+  }
+};
+</script>
+
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login - RePlate</title>
+
+  <style>
+ * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ========= BODY ========= */
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background: url("https://images.unsplash.com/photo-1504674900247-0877df9cc836");
+  background-size: cover;
+  background-position: center;
+}
+body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.2);
+}
+
+/* ========= CONTAINER (GLASS EFFECT) ========= */
+.container {
+  width: 420px; /* 🔥 increased */
+  padding: 45px 40px;
+
+  border-radius: 18px;
+
+  background: rgba(255,255,255,0.18);
+  backdrop-filter: blur(12px);
+
+  border: 1px solid rgba(255,255,255,0.3);
+
+  box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+
+  text-align: center;
+}
+.logo {
+  font-size: 34px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+h2 {
+  font-size: 20px;
+  margin-bottom: 25px;
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+/* ========= INPUT ========= */
+.input-group {
+  text-align: left;
+  margin-bottom: 18px;
+}
+
+.input-group label {
+  font-size: 13px;
+  color: #e0e0e0;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 14px;
+
+  margin-top: 6px;
+  margin-bottom: 10px;
+
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.4);
+
+  background: rgba(255,255,255,0.25);
+  color: white;
+
+  font-size: 14px;
+
+  outline: none;
+  transition: 0.3s;
+}
+
+.input-group input::placeholder {
+  color: rgba(255,255,255,0.8);
+}
+
+.input-group input:focus {
+  border-color: #66bb6a;
+  background: rgba(255,255,255,0.35);
+
+  box-shadow: 0 0 10px rgba(102,187,106,0.6);
+}
+
+/* ========= BUTTON ========= */
+button {
+  width: 100%;
+  padding: 14px;
+
+  background: linear-gradient(45deg, #2e7d32, #66bb6a);
+  color: white;
+
+  border: none;
+  border-radius: 12px;
+
+  font-size: 16px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  box-shadow: 0 8px 20px rgba(46,125,50,0.4);
+
+  transition: all 0.3s ease;
+}
+button:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 12px 25px rgba(46,125,50,0.5);
+}
+button:active {
+  transform: scale(0.97);
+  box-shadow: 0 5px 15px rgba(46,125,50,0.3);
+}
+button {
+  box-shadow:
+    0 8px 20px rgba(46,125,50,0.4),
+    0 0 10px rgba(102,187,106,0.3);
+}
+
+/* ========= LINK ========= */
+.link {
+  margin-top: 15px;
+  display: block;
+  color: #c8e6c9;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+/* ========= MESSAGE ========= */
+#message {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.success {
+  background-color: rgba(200,230,201,0.9);
+  color: #1b5e20;
+}
+
+.error {
+  background-color: rgba(255,205,210,0.9);
+  color: #b71c1c;
+}
+
+/* ========= ANIMATION ========= */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <div class="logo">RePlate</div>
+    <h2>Login</h2>
+
+    <div class="input-group">
+      <label>Email</label>
+      <input type="email" id="email" placeholder="Enter your email" />
+    </div>
+
+    <div class="input-group">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="Enter your password" />
+    </div>
+
+    <button onclick="login()">Login</button>
+
+    <div id="message" style="display:none; margin-top:15px;"></div>
+
+    <span class="link" onclick="goRegister()">Don't have an account? Register</span>
+  </div>
+  <script>
+    function goRegister() {
+      window.location.href = "register.html";
+    }
+
+    async function login() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  const msg = document.getElementById("message");
+
+  msg.style.display = "none";
+
+  try {
+    const res = await fetch("http://localhost:5000/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ email, password })
+    });
+
+    console.log("Response status:", res.status);
+
+    let data;
+
+    // 🔥 SAFE JSON PARSE (prevents <DOCTYPE error crash)
+    try {
+      data = await res.json();
+    } catch (err) {
+      msg.className = "error";
+      msg.innerText = "Invalid server response. Check backend.";
+      msg.style.display = "block";
+      return;
+    }
+
+    console.log("Response data:", data);
+
+    // ✅ SUCCESS
+    if (res.ok && data.token) {
+
+      // store token
+      localStorage.setItem("token", data.token);
+
+      // 🔥 STORE NAME FROM BACKEND
+      if (data.user && data.user.name) {
+        localStorage.setItem("name", data.user.name);
+      } else {
+        // fallback (just in case)
+        const raw = email.split("@")[0];
+        const name = raw.charAt(0).toUpperCase() + raw.slice(1);
+        localStorage.setItem("name", name);
+      }
+
+      msg.className = "success";
+      msg.innerText = "Login successful!";
+      msg.style.display = "block";
+
+      setTimeout(() => {
+        window.location.href = "dashboard.html";
+      }, 1000);
+
+    } else {
+      // ❌ LOGIN FAILED
+      msg.className = "error";
+      msg.innerText = data.message || "Invalid email or password";
+      msg.style.display = "block";
+    }
+
+  } catch (err) {
+    console.error("Login error:", err);
+
+    msg.className = "error";
+    msg.innerText = "Server error. Please try again.";
+    msg.style.display = "block";
+  }
+}
+
+  </script>
+
+</body>
+</html>

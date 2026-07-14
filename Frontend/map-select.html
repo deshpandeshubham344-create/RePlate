@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Select Location</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <style>
+    #map { height: 100vh; }
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+const map = L.map('map').setView([18.5204, 73.8567], 13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+let marker;
+
+let selectedLat = null;
+let selectedLng = null;
+
+map.on('click', function(e) {
+  const { lat, lng } = e.latlng;
+
+  selectedLat = lat;
+  selectedLng = lng;
+
+  if (marker) map.removeLayer(marker);
+
+  marker = L.marker([lat, lng]).addTo(map);
+
+  marker.bindPopup(`
+    <b>Confirm Location?</b><br><br>
+    <button onclick="confirmLocation()">OK</button>
+  `).openPopup();
+});
+function confirmLocation() {
+  if (!selectedLat || !selectedLng) return;
+
+  // send to parent
+  window.opener.postMessage({
+    lat: selectedLat,
+    lng: selectedLng
+  }, "*");
+
+  // close window
+  window.close();
+}
+</script>
+
+</body>
+</html>

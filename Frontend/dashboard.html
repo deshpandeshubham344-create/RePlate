@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+
+  <style>
+   body {
+  font-family: 'Poppins', sans-serif;
+  background: #f1f5f9;
+  margin: 0;
+}
+
+  .navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 15px 30px;
+  background: linear-gradient(90deg, #166534, #22c55e);
+  color: white;
+}
+
+/* LEFT */
+.logo {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+/* CENTER */
+.nav-center {
+  flex: 1;
+  text-align: center;
+  font-size: 15px;
+}
+
+/* RIGHT */
+.nav-right {
+  display: flex;
+  align-items: center;
+}
+
+/* BUTTON */
+.logout-btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: none;
+  background: white;
+  color: #166534;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+    .container {
+  max-width: 900px;
+  margin: 30px auto;
+  padding: 0 10px;
+}
+
+  
+  .card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* 🔥 ADD THIS LINE */
+
+  gap: 20px;
+
+  padding: 18px;
+  border-radius: 18px;
+
+  background: white;
+  margin-bottom: 18px;
+
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+
+  transition: 0.3s;
+}
+.card-content {
+  flex: 1;
+}
+
+.card-right {
+  display: flex;
+  justify-content: flex-end;
+  min-width: 120px;
+}
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+}
+
+ .status {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+/* COLORS */
+.pending { background: #fde68a; }
+.accepted { background: #7dd3fc; }
+.requested { background: #fdba74; }
+.assigned { background: #86efac; }
+.picked { background: #d8b4fe; }
+.completed { background: #bbf7d0; }
+
+   button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  margin: 3px;
+  font-weight: 500;
+
+  transition: 0.2s;
+}
+
+/* PRIMARY */
+.btn-primary {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: scale(1.05);
+}
+
+/* SECONDARY */
+.btn-secondary {
+  background: #334155;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #1e293b;
+}
+
+/* DANGER */
+.btn-danger {
+  background: #dc2626;
+  color: white;
+}
+
+    .panel {
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  margin-bottom: 25px;
+
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  transition: 0.3s;
+}
+
+.panel:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+}
+.action-btn {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+
+  transition: 0.2s;
+}
+
+.action-btn:hover {
+  transform: scale(1.05);
+}
+
+/* IMAGE FIX */
+.food-img {
+  width: 170px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 14px;
+  cursor: pointer;
+
+  transition: 0.3s;
+}
+
+.food-img:hover {
+  transform: scale(1.08);
+}
+
+
+/* TEXT AREA */
+.card-content h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.card-content p {
+  margin: 5px 0;
+  color: #555;
+}
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* IMAGE DEFAULT STATE */
+#modalImg {
+  max-width: 70%;
+  max-height: 80%;
+  border-radius: 12px;
+
+  transform: scale(0.6);
+  opacity: 0;
+
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* 🔥 ACTIVE ZOOM */
+.modal.active #modalImg {
+  transform: scale(1);
+  opacity: 1;
+}
+
+/* ANIMATION */
+@keyframes zoomIn {
+  from {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+#toast {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+
+  min-width: 220px;
+  max-width: 300px;
+
+  padding: 12px 18px;
+  border-radius: 10px;
+
+  background: #22c55e;
+  color: white;
+
+  font-size: 14px;
+  font-weight: 500;
+
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+
+  opacity: 0;
+  transform: translateY(20px);
+
+  transition: all 0.3s ease;
+  z-index: 9999;
+}
+
+/* SHOW */
+#toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* TYPES */
+#toast.success { background: #22c55e; }
+#toast.error { background: #ef4444; }
+#toast.info { background: #3b82f6; }
+.confirm-box {
+  position: fixed;
+  bottom: 80px;
+  right: 30px;
+
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+
+  width: 260px;
+  display: none;
+  z-index: 9999;
+}
+
+.confirm-box p {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: space-between;
+}
+
+.confirm-actions button {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.confirm-actions button:first-child {
+  background: #22c55e;
+  color: white;
+}
+
+.confirm-actions button:last-child {
+  background: #ef4444;
+  color: white;
+}
+  </style>
+</head>
+
+<body>
+
+<div class="navbar">
+
+  <div class="logo">RePlate</div>
+
+  <div class="nav-center">
+    <span id="username"></span>
+  </div>
+
+  <div class="nav-right">
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+
+</div>
+<div class="container">
+
+  <!-- 🔥 PANEL FIRST -->
+  <div id="restaurantPanel" class="panel" style="display:none;">
+    <h3>Restaurant</h3>
+    <button class="action-btn" onclick="goToPostFood()">Post Food</button>
+  </div>
+
+  <div id="ngoPanel" class="panel" style="display:none;">
+    <h3>NGO</h3>
+  </div>
+
+  <div id="volunteerPanel" class="panel" style="display:none;">
+    <h3>Volunteer</h3>
+  </div>
+
+  <!-- 🔥 THEN LIST -->
+  <h3>Food Listings</h3>
+  <div id="foodList"></div>
+  <img id="popupImg" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); max-width:80%; border-radius:12px; z-index:1000; box-shadow:0 0 20px rgba(0,0,0,0.5);">
+
+</div>
+  <div id="imageModal" class="modal">
+    <img id="modalImg">
+  </div>
+  <div id="toast"></div>
+  <div id="confirmBox" class="confirm-box">
+  <p id="confirmMessage"></p>
+  <div class="confirm-actions">
+    <button onclick="confirmYes()">Yes</button>
+    <button onclick="confirmNo()">Cancel</button>
+  </div>
+</div>
+<script>
+ let foodIds = [];
+const token = localStorage.getItem("token");
+
+function parseJwt(token) {
+  return JSON.parse(atob(token.split('.')[1]));
+}
+
+const user = parseJwt(token);
+const name = localStorage.getItem("name") || user.name || "User";
+document.getElementById("username").innerText = "Hi, " + name;
+
+
+window.onload = function () {
+
+  const role = user.role;
+
+  if (role === "restaurant") {
+    document.getElementById("restaurantPanel").style.display = "block";
+  }
+
+  if (role === "ngo") {
+    document.getElementById("ngoPanel").style.display = "block";
+  }
+
+  if (role === "volunteer") {
+    document.getElementById("volunteerPanel").style.display = "block";
+  }
+
+  loadFood();
+};
+
+// =======================
+// LOAD FOOD
+// =======================
+async function loadFood() {
+
+  let url = "";
+
+  if (user.role === "ngo") url = "http://localhost:5000/api/food/available";
+  else if (user.role === "restaurant") url = "http://localhost:5000/api/food/my-food";
+  else url = "http://localhost:5000/api/food/volunteer-food";
+
+  const res = await fetch(url, {
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  const data = await res.json();
+  const container = document.getElementById("foodList");
+  container.innerHTML = "";
+
+  const list = data.foodListings || [];
+  foodIds = [];
+
+  // 🔹 LOOP ONLY FOR UI
+  for (const food of list) {
+    foodIds.push(food._id);
+
+let buttons = "";
+
+// ================= NGO =================
+if (user.role === "ngo") {
+
+  if (food.status === "pending") {
+    buttons += `<button class="btn-primary" onclick="acceptFood('${food._id}')">Accept</button>`;
+  }
+
+  else if (food.status === "accepted") {
+    buttons += `<button class="btn-secondary" onclick="requestVolunteers('${food._id}')">Request Volunteers</button>`;
+  }
+
+  // 🔥 ADD THIS BLOCK
+  else if (food.status === "picked") {
+    buttons += `
+      <button class="btn-secondary" onclick="trackDelivery('${food._id}')">
+        Track Delivery
+      </button>
+    `;
+  }
+
+  // OPTIONAL: completed state
+  else if (food.status === "completed") {
+    buttons += `<span>✅ Delivered</span>`;
+  }
+}
+
+// ================= VOLUNTEER =================
+if (user.role === "volunteer") {
+
+  const userId = user.id;
+
+  const assignedId = String(
+    food.assignedVolunteer?._id || food.assignedVolunteer || ""
+  );
+
+  const isMine = assignedId === String(userId);
+
+  if (food.status === "requested") {
+    buttons += `
+      <button class="btn-primary" onclick="handleAccept('${food._id}')">Accept</button>
+      <button class="btn-danger" onclick="rejectRequest('${food._id}')">Reject</button>
+    `;
+  }
+
+  else if (food.status === "assigned" && isMine) {
+    buttons += `
+      <button class="btn-secondary" onclick="openMapToRestaurant('${food._id}')">Navigate To Restaurant</button>
+      <button id="pickupBtn-${food._id}" disabled>Reach Restaurant</button>
+    `;
+  }
+
+  else if (food.status === "picked" && isMine) {
+    buttons += `
+      <button class="btn-secondary" onclick="openNgoMap('${food._id}')">Navigate To NGO</button>
+      <button id="completeBtn-${food._id}" disabled>Reach NGO</button>
+    `;
+  }
+}
+    // (your existing button logic — keep as is)
+
+    const div = document.createElement("div");
+
+div.innerHTML = `
+  <div class="card">
+
+    ${food.image ? `
+      <img src="http://localhost:5000/uploads/${food.image}" 
+           class="food-img"
+           onclick="openImage(this.src)">
+    ` : ""}
+
+    <div class="card-content">
+      <h3>${food.foodName}</h3>
+      <p>Qty: ${food.quantity}</p>
+      <p class="pickup-time">Pickup: ${formatTime(food.pickupTime)}</p>
+      ${buttons}
+    </div>
+
+    <!-- 🔥 WRAP STATUS -->
+    <div class="card-right">
+      <span class="status ${food.status}">${food.status}</span>
+    </div>
+
+  </div>
+`;
+
+    container.appendChild(div);
+  }
+
+  // ✅ OUTSIDE LOOP (VERY IMPORTANT)
+
+  console.log("FOOD IDS AFTER LOAD:", foodIds);
+
+  // 🔥 START CHECK BUTTONS
+  if (user.role === "volunteer" && !window.intervalStarted) {
+    window.intervalStarted = true;
+
+    setInterval(() => {
+      console.log("CHECKING IDS:", foodIds);
+      foodIds.forEach(id => checkButtons(id));
+    }, 3000);
+  }
+
+  // 🔥 START LIVE TRACKING
+  if (user.role === "volunteer" && !window.trackingStarted) {
+    window.trackingStarted = true;
+    // startLiveTracking();
+  }
+}
+// =======================
+// CHECK BUTTONS
+// =======================
+async function checkButtons(foodId) {
+  try {
+
+    const locRes = await fetch(`http://localhost:5000/api/food/location/${foodId}`, {
+      headers: { Authorization: "Bearer " + token }
+    });
+
+    const locData = await locRes.json();
+    if (!locData.currentLocation) {
+  console.log("No current location yet");
+  return;
+}
+
+    const curr = locData.currentLocation;
+
+    const res = await fetch(`http://localhost:5000/api/food/${foodId}`, {
+      headers: { Authorization: "Bearer " + token }
+    });
+
+    const food = await res.json();
+    console.log("FOOD DATA:", food);
+
+    // 🔹 PICKUP
+    const pickupBtn = document.getElementById(`pickupBtn-${foodId}`);
+    if (pickupBtn && food.status === "assigned") {
+
+      const rest = food.restaurantId.location;
+      const dist = calculateDistance(curr.lat, curr.lng, rest.lat, rest.lng);
+
+      if (dist <= 0.1) {
+        pickupBtn.disabled = false;
+        pickupBtn.innerText = "Pick from Restaurant";
+        pickupBtn.onclick = () => markPicked(foodId);
+      }
+    }
+
+    // 🔹 COMPLETE
+    const completeBtn = document.getElementById(`completeBtn-${foodId}`);
+    if (completeBtn && food.status === "picked") {
+
+      if (!food.ngoId || !food.ngoId.location) return;
+      const ngo = food.ngoId.location;  
+      const dist = calculateDistance(curr.lat, curr.lng, ngo.lat, ngo.lng);
+
+      console.log("DIST:", dist);
+
+      if (dist <= 0.3) {
+  completeBtn.disabled = false;
+  completeBtn.innerText = "Complete Delivery";
+  completeBtn.onclick = () => completeDelivery(foodId);
+} else {
+  completeBtn.disabled = true;
+  completeBtn.innerText = "Reach NGO";
+}
+    }
+
+  } catch (err) {
+    console.log("Error:", err);
+  }
+
+}
+
+// =======================
+// DISTANCE
+// =======================
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+
+  const dLat = (lat2 - lat1) * Math.PI/180;
+  const dLon = (lon2 - lon1) * Math.PI/180;
+
+  const a =
+    Math.sin(dLat/2)**2 +
+    Math.cos(lat1*Math.PI/180) *
+    Math.cos(lat2*Math.PI/180) *
+    Math.sin(dLon/2)**2;
+
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+
+// =======================
+// API FUNCTIONS
+// =======================
+
+async function apiPut(url) {
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    }
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    console.error("❌ API Error:", err);
+    throw new Error("Request failed");
+  }
+
+  return res.json();
+}
+
+async function acceptFood(id) {
+  try {
+    const res = await fetch(`http://localhost:5000/api/food/accept/${id}`, {
+      method: "PUT",
+      headers: { Authorization: "Bearer " + token }
+    });
+
+    if (!res.ok) {
+      showToast("❌ Failed to accept food", "error");
+      return;
+    }
+
+    showToast("✅ Food accepted successfully");
+    loadFood();
+
+  } catch (err) {
+    showToast("❌ Server error", "error");
+  }
+}
+async function requestVolunteers(id) {
+
+  const res = await fetch(`http://localhost:5000/api/food/request-volunteers/${id}`, {
+    method: "PUT",
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    showToast("❌ Failed to send request", "error");
+    return;
+  }
+
+  showToast(
+  `✅ Request sent to ${data.totalVolunteers} volunteers (${data.nearbyVolunteers} nearby)`
+);
+  
+  loadFood();
+}
+
+async function handleAccept(id) {
+  try {
+    const res = await fetch(`http://localhost:5000/api/food/accept-request/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token
+      }
+    });
+
+    const data = await res.json();
+
+    // 🔥 TOO FAR CASE (NEW UI)
+    if (!res.ok && data.requireOverride) {
+
+      showConfirm(data.message + ". Accept anyway?", async () => {
+
+        await fetch(`http://localhost:5000/api/food/accept-request/${id}?override=true`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + token
+          }
+        });
+
+        showToast("🚚 Accepted despite distance");
+        loadFood();
+      });
+
+      return;
+    }
+
+    if (!res.ok) {
+      showToast("❌ Failed to accept", "error");
+      return;
+    }
+
+    showToast("🚚 Delivery request accepted");
+    loadFood();
+
+  } catch (err) {
+    showToast("❌ Server error", "error");
+  }
+}
+async function rejectRequest(id) {
+  try {
+    const res = await fetch(`http://localhost:5000/api/food/reject-request/${id}`, {
+      method: "PUT",
+      headers: { Authorization: "Bearer " + token }
+    });
+
+    if (!res.ok) {
+      showToast("❌ Failed to reject request", "error");
+      return;
+    }
+
+    showToast("⚠️ Request rejected");
+    loadFood();
+
+  } catch (err) {
+    showToast("❌ Server error", "error");
+  }
+}
+
+async function markPicked(id) {
+  try {
+    const res = await fetch(`http://localhost:5000/api/food/picked/${id}`, {
+      method: "PUT",
+      headers: { Authorization: "Bearer " + token }
+    });
+
+    if (!res.ok) {
+      showToast("❌ Failed to mark pickup", "error");
+      return;
+    }
+
+    showToast("📦 Food picked up");
+    loadFood();
+
+  } catch (err) {
+    showToast("❌ Server error", "error");
+  }
+}
+async function completeDelivery(id) {
+  try {
+    const res = await fetch(`http://localhost:5000/api/food/complete/${id}`, {
+      method: "PUT",
+      headers: { Authorization: "Bearer " + token }
+    });
+
+    if (!res.ok) {
+      showToast("❌ Failed to complete delivery", "error");
+      return;
+    }
+
+    showToast("🎉 Delivery completed successfully");
+    loadFood();
+
+  } catch (err) {
+    showToast("❌ Server error", "error");
+  }
+}
+function formatTime(time) {
+  const date = new Date(time);
+  return date.toLocaleString("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  });
+}
+function openMapToRestaurant(id) {
+  window.location.href = `map.html?foodId=${id}&type=restaurant`;
+}
+
+function openNgoMap(id) {
+  window.location.href = `map.html?foodId=${id}&type=ngo`;
+}
+function goToPostFood() {
+  window.location.href = "postFood.html";
+}
+function logout(){
+    window.location.href = "login.html"
+}
+function trackDelivery(foodId) {
+  window.location.href = `map.html?foodId=${foodId}&role=ngo`;
+}
+function openImage(src) {
+  const modal = document.getElementById("imageModal");
+  const img = document.getElementById("modalImg");
+
+  img.src = src;
+
+  modal.style.display = "flex";
+
+  // 🔥 FORCE REPAINT (important trick)
+  modal.offsetHeight;
+
+  modal.classList.add("active");
+}
+function showToast(message, type = "success") {
+  const toast = document.getElementById("toast");
+
+  toast.innerText = message;
+
+  // reset classes
+  toast.className = "";
+  toast.classList.add(type);
+
+  // show
+  toast.classList.add("show");
+
+  // hide after 3 sec
+  setTimeout(() => {
+    toast.classList.remove("show");
+  }, 3000);
+}
+let confirmCallback = null;
+
+function showConfirm(message, onYes) {
+  const box = document.getElementById("confirmBox");
+  document.getElementById("confirmMessage").innerText = message;
+
+  confirmCallback = onYes;
+  box.style.display = "block";
+}
+
+function confirmYes() {
+  document.getElementById("confirmBox").style.display = "none";
+  if (confirmCallback) confirmCallback();
+}
+
+function confirmNo() {
+  document.getElementById("confirmBox").style.display = "none";
+}
+// CLOSE ON CLICK
+document.getElementById("imageModal").addEventListener("click", function () {
+  this.classList.remove("active");
+
+  setTimeout(() => {
+    this.style.display = "none";
+  }, 300);
+});
+window.history.pushState(null, "", window.location.href);
+
+window.onpopstate = function () {
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    window.location.href = "dashboard.html";
+  } else {
+    window.location.href = "index.html";
+  }
+};
+</script>
+</div>
+</body>
+</html>

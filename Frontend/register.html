@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Register - RePlate</title>
+
+  <style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ========= BODY ========= */
+body {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background:
+    linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)),
+    url("https://images.unsplash.com/photo-1490645935967-10de6ba17061");
+
+  background-size: cover;
+  background-position: center;
+}
+
+/* ========= CONTAINER ========= */
+.container {
+  width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+
+  padding: 35px 30px;
+
+  border-radius: 18px;
+
+  background: rgba(255,255,255,0.18);
+  backdrop-filter: blur(12px);
+
+  border: 1px solid rgba(255,255,255,0.3);
+
+  box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+
+  text-align: center;
+  scroll-behavior: smooth;
+}
+
+/* ========= HEADING ========= */
+h2 {
+  font-size: 22px;
+  margin-bottom: 20px;
+  color: #e8f5e9;
+  font-weight: 600;
+}
+
+/* ========= INPUTS ========= */
+input, select, textarea {
+  width: 100%;
+  padding: 13px;
+
+  margin: 8px 0;
+
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.4);
+
+  background: rgba(255,255,255,0.25);
+  color: white;
+
+  font-size: 14px;
+
+  outline: none;
+  transition: 0.3s;
+}
+
+/* placeholder */
+input::placeholder,
+textarea::placeholder {
+  color: rgba(255,255,255,0.8);
+}
+
+/* focus */
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #66bb6a;
+  background: rgba(255,255,255,0.35);
+
+  box-shadow: 0 0 10px rgba(102,187,106,0.6);
+}
+
+/* ========= BUTTON ========= */
+button {
+  width: 100%;
+  padding: 14px;
+
+  background: linear-gradient(45deg,#2e7d32,#66bb6a);
+  color: white;
+
+  border: none;
+  border-radius: 12px;
+
+  font-size: 16px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  box-shadow: 0 8px 20px rgba(46,125,50,0.4);
+
+  transition: all 0.3s ease;
+
+  margin-top: 10px;
+}
+
+/* hover */
+button:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 12px 25px rgba(46,125,50,0.5);
+}
+
+/* click */
+button:active {
+  transform: scale(0.97);
+}
+
+/* ========= MAP BUTTON ========= */
+.map-btn {
+  background: linear-gradient(45deg,#1976d2,#42a5f5);
+}
+
+.map-btn:hover {
+  box-shadow: 0 12px 25px rgba(25,118,210,0.5);
+}
+
+/* ========= TOGGLE ========= */
+.toggle {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.toggle button {
+  width: 100%;
+  padding: 10px;
+
+  background: rgba(255,255,255,0.25);
+  color: white;
+
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.3);
+}
+
+.active {
+  background: linear-gradient(45deg,#2e7d32,#66bb6a) !important;
+  color: white !important;
+}
+
+/* ========= MESSAGE ========= */
+#message {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 6px;
+  display: none;
+  font-size: 14px;
+}
+
+.success {
+  background-color: rgba(200,230,201,0.9);
+  color: #1b5e20;
+}
+
+.error {
+  background-color: rgba(255,205,210,0.9);
+  color: #b71c1c;
+}
+
+/* ========= LOCATION TEXT ========= */
+.location-text {
+  font-size: 12px;
+  color: #ddd;
+}
+
+/* ========= LINK ========= */
+.link {
+  margin-top: 15px;
+  display: block;
+  color: #c8e6c9;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+/* ========= SCROLLBAR ========= */
+.container::-webkit-scrollbar {
+  width: 0px;
+}
+
+.container::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2);
+  border-radius: 10px;
+}
+
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2>Register</h2>
+
+  <input type="text" id="name" placeholder="Name" />
+  <input type="email" id="email" placeholder="Email" />
+  <input type="password" id="password" placeholder="Password" />
+  <input type="text" id="phone" placeholder="Phone" />
+
+  <!-- 🔥 LOCATION METHOD -->
+  <div class="toggle">
+    <button id="addrBtn" class="active" onclick="selectMethod('address')">Address</button>
+    <button id="mapBtn" onclick="selectMethod('map')">Map</button>
+  </div>
+
+  <!-- ADDRESS INPUT -->
+  <div id="addressField">
+    <textarea id="address" placeholder="Enter Address"></textarea>
+  </div>
+
+  <!-- MAP INPUT -->
+  <div id="mapField" style="display:none;">
+    <button class="map-btn" onclick="openMapSelector()">Select Location on Map</button>
+    <p id="selectedLocation" class="location-text"></p>
+  </div>
+
+  <select id="role" onchange="handleRoleChange()">
+    <option value="">Select Role</option>
+    <option value="restaurant">Restaurant</option>
+    <option value="ngo">NGO</option>
+    <option value="volunteer">Volunteer</option>
+  </select>
+
+  <div id="vehicleField" style="display:none;">
+    <input type="text" id="vehicleType" placeholder="Vehicle Type" />
+  </div>
+
+  <button onclick="registerUser()">Register</button>
+  <span class="link" onclick="goLogin()">Already have an account? Login</span>
+
+  <div id="message"></div>
+</div>
+
+<script>
+let selectedLat = null;
+let selectedLng = null;
+let method = "address";
+
+function selectMethod(type) {
+  method = type;
+
+  document.getElementById("addressField").style.display =
+    type === "address" ? "block" : "none";
+
+  document.getElementById("mapField").style.display =
+    type === "map" ? "block" : "none";
+
+  document.getElementById("addrBtn").classList.toggle("active", type === "address");
+  document.getElementById("mapBtn").classList.toggle("active", type === "map");
+}
+
+function handleRoleChange() {
+  const role = document.getElementById("role").value;
+  document.getElementById("vehicleField").style.display =
+    role === "volunteer" ? "block" : "none";
+}
+
+function openMapSelector() {
+  window.open("map-select.html", "_blank");
+}
+
+// 🔥 Receive map location
+window.addEventListener("message", async (event) => {
+  const { lat, lng } = event.data;
+
+  selectedLat = lat;
+  selectedLng = lng;
+
+  // 🔥 Convert to real address
+  const res = await fetch(
+    `https://api.openrouteservice.org/geocode/reverse?api_key=YOUR_API_KEY&point.lon=${lng}&point.lat=${lat}`
+  );
+
+  const data = await res.json();
+
+  let place = "Selected location";
+
+  if (data.features && data.features.length > 0) {
+    place = data.features[0].properties.label;
+  }
+
+  document.getElementById("selectedLocation").innerText = "📍 " + place;
+});
+
+async function registerUser() {
+
+  const msg = document.getElementById("message");
+  msg.style.display = "none";
+
+  const name = document.getElementById("name").value;
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  const phone = document.getElementById("phone").value;
+  const role = document.getElementById("role").value;
+
+  let vehicleType = null;
+
+  if (role === "volunteer") {
+    vehicleType = document.getElementById("vehicleType").value;
+  }
+
+  // 🔥 GET REAL GPS LOCATION
+  navigator.geolocation.getCurrentPosition(
+
+    async (position) => {
+
+      try {
+
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        console.log("GPS:", lat, lng);
+
+        const res = await fetch("http://localhost:5000/api/auth/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            name,
+            email,
+            password,
+            phone,
+            role,
+            vehicleType,
+            lat,
+            lng
+          })
+        });
+
+        const data = await res.json();
+
+        // 🔥 SHOW BACKEND MESSAGE
+        if (!res.ok) {
+          throw new Error(data.message);
+        }
+
+        msg.className = "success";
+        msg.innerText = "Registered successfully!";
+        msg.style.display = "block";
+
+        setTimeout(() => {
+          window.location.href = "login.html";
+        }, 1000);
+
+      } catch (err) {
+
+        msg.className = "error";
+        msg.innerText = err.message;
+        msg.style.display = "block";
+
+        console.log(err);
+      }
+
+    },
+
+    (error) => {
+
+      msg.className = "error";
+      msg.innerText = "Location permission denied ❌";
+      msg.style.display = "block";
+
+      console.log(error);
+    }
+
+  );
+}
+
+
+function goLogin() {
+  window.location.href = "login.html";
+}
+
+</script>
+
+</body>
+</html>

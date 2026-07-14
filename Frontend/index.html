@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RePlate</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ========= BODY ========= */
+body {
+  background: linear-gradient(to bottom, #ffffff, #f1f5f9);
+  color: #0f172a;
+}
+
+/* ========= NAVBAR ========= */
+.navbar {
+  position: fixed;
+  width: 100%;
+  padding: 15px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  z-index: 100;
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.nav-btn {
+  background: linear-gradient(45deg,#22c55e,#4ade80);
+  border: none;
+  padding: 8px 18px;
+  border-radius: 25px;
+  cursor: pointer;
+  color: white;
+  transition: 0.3s;
+}
+
+.nav-btn:hover {
+  transform: scale(1.05);
+}
+
+/* ========= HERO ========= */
+.hero {
+  height: 100vh;
+
+  background:
+    linear-gradient(rgba(255,255,255,0.55), rgba(255,255,255,0.65)),
+    url("https://images.unsplash.com/photo-1498837167922-ddd27525d352");
+
+  background-size: cover;
+  background-position: center;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  text-align: center;
+  padding: 20px;
+
+  animation: fadeIn 1.2s ease-in-out;
+}
+
+.hero h1 {
+  font-size: 55px;
+  margin-bottom: 10px;
+  animation: slideUp 1s ease;
+}
+
+.hero p {
+  max-width: 600px;
+  opacity: 0.7;
+  margin-bottom: 20px;
+  animation: slideUp 1.3s ease;
+}
+
+.hero button {
+  padding: 14px 30px;
+  border-radius: 30px;
+  border: none;
+
+  background: linear-gradient(45deg,#22c55e,#4ade80);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+
+  transition: 0.3s;
+  animation: slideUp 1.6s ease;
+}
+
+.hero button:hover {
+  transform: scale(1.1);
+}
+
+/* ========= SECTION ========= */
+.section {
+  padding: 80px 20px;
+  text-align: center;
+  background: #f8fafc;
+  border-top: 1px solid rgba(0,0,0,0.03);
+}
+.section:nth-child(even) {
+  background: #eef2f7;
+}
+
+.section h2 {
+  font-size: 32px;
+  margin-bottom: 20px;
+}
+
+/* ========= CARDS ========= */
+.features {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 25px;
+}
+
+.card {
+  width: 260px;
+  padding: 25px;
+  border-radius: 15px;
+
+  background: white;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,0.03);
+
+  transition: 0.3s;
+}
+
+.card:hover {
+  transform: translateY(-10px) scale(1.05);
+}
+
+/* ========= STATS ========= */
+.stats {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  font-size: 28px;
+  font-weight: bold;
+  color: #22c55e;
+}
+
+/* ========= CTA ========= */
+.cta {
+  padding: 80px 20px;
+  text-align: center;
+  background: linear-gradient(45deg,#22c55e,#4ade80);
+  color: white;
+}
+
+.cta button {
+  padding: 12px 25px;
+  border-radius: 30px;
+  border: none;
+  background: white;
+  color: #22c55e;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* ========= FOOTER ========= */
+.footer {
+  text-align: center;
+  padding: 20px;
+  background: #e2e8f0;
+  color: #555;
+}
+
+/* ========= ANIMATIONS ========= */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ========= RESPONSIVE ========= */
+@media(max-width:768px){
+  .hero h1 {
+    font-size: 32px;
+  }
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 30px;
+  max-width: 900px;
+  margin: 40px auto;
+}
+
+.stat-card {
+  background: linear-gradient(to bottom, #ffffff, #f8fafc);
+  border-radius: 20px;
+  padding: 30px 20px;
+  text-align: center;
+
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,0.03);
+
+  transition: 0.4s;
+  transform: translateY(30px);
+  opacity: 0;
+}
+
+.stat-card.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.stat-card:hover {
+  transform: translateY(-10px) scale(1.05);
+}
+
+.icon {
+  font-size: 30px;
+  margin-bottom: 10px;
+}
+
+.stat-card h3 {
+  font-size: 28px;
+  color: #22c55e;
+}
+
+.stat-card p {
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+.stat-card h3 {
+  font-size: 30px;
+  font-weight: 600;
+  background: linear-gradient(45deg,#22c55e,#16a34a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<div class="navbar">
+  <div class="logo">RePlate</div>
+  <button class="nav-btn" onclick="goLogin()">Login</button>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <h1>Feeding Futures 🌱</h1>
+  <p>Transforming surplus food into meaningful impact</p>
+  <button onclick="goStart()">Get Started</button>
+</section>
+
+<!-- STATS -->
+<section class="section">
+  <h2>Our Impact</h2>
+
+  <div class="stats">
+
+    <div class="stat-card">
+      <div class="icon">🍱</div>
+      <h3><span id="meals">0</span>+</h3>
+      <p>Meals Served</p>
+    </div>
+
+    <div class="stat-card">
+      <div class="icon">🚚</div>
+      <h3><span id="volunteers">0</span>+</h3>
+      <p>Volunteers</p>
+    </div>
+
+    <div class="stat-card">
+      <div class="icon">🏢</div>
+      <h3><span id="restaurants">0</span>+</h3>
+      <p>Restaurants</p>
+    </div>
+
+    <div class="stat-card">
+      <div class="icon">🤝</div>
+      <h3><span id="ngos">0</span>+</h3>
+      <p>NGOs</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section">
+  <h2>Features</h2>
+
+  <div class="features">
+    <div class="card">🍱 Easy Food Sharing</div>
+    <div class="card">🚚 Smart Routing</div>
+    <div class="card">📍 Live Tracking</div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <h2>Join the Movement</h2>
+  <button onclick="goStart()">Start Now</button>
+</section>
+
+<!-- FOOTER -->
+<div class="footer">
+  © 2026 RePlate | Made with ❤️
+</div>
+<script>
+function goLogin(){ window.location.href="login.html"; }
+function goStart(){ window.location.href="login.html"; }
+async function loadStats() {
+  const res = await fetch("http://localhost:5000/api/stats");
+  const data = await res.json();
+
+  animateValue("meals", data.meals);
+  animateValue("volunteers", data.volunteers);
+  animateValue("restaurants", data.restaurants);
+  animateValue("ngos", data.ngos);
+}
+
+function animateValue(id, end) {
+  let start = 0;
+  let duration = 1500;
+  let stepTime = Math.max(Math.floor(duration / end), 20);
+
+  let obj = document.getElementById(id);
+
+  let timer = setInterval(() => {
+    start++;
+    obj.innerText = start.toLocaleString();
+
+    if (start >= end) {
+      clearInterval(timer);
+    }
+  }, stepTime);
+}
+
+// 🎯 Scroll Animation
+function revealStats() {
+  const cards = document.querySelectorAll(".stat-card");
+  const trigger = window.innerHeight * 0.85;
+
+  cards.forEach(card => {
+    const top = card.getBoundingClientRect().top;
+
+    if (top < trigger) {
+      card.classList.add("show");
+    }
+  });
+}
+
+window.addEventListener("scroll", revealStats);
+let started = false;
+
+function handleScroll() {
+  const section = document.querySelector(".stats");
+  const top = section.getBoundingClientRect().top;
+  const trigger = window.innerHeight * 0.8;
+
+  if (top < trigger && !started) {
+    loadStats();
+    started = true;
+  }
+
+  revealStats();
+}
+
+window.addEventListener("scroll", handleScroll);
+</script>
+
+</body>
+</html>
