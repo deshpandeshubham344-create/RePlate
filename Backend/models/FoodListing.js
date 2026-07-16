@@ -4,7 +4,8 @@ const foodListingSchema = new mongoose.Schema(
 {
   foodName: {
     type: String,
-    required: true
+    required: true,
+    trim:true
   },
 
   quantity: {
@@ -23,18 +24,25 @@ const foodListingSchema = new mongoose.Schema(
   },
 
   // ✅ ONLY ONE currentLocation
-  currentLocation: {
-    lat: { type: Number, default: null },
-    lng: { type: Number, default: null }
-  },
+ volunteerCurrentLocation: {
+  lat: { type: Number, default: null },
+  lng: { type: Number, default: null }
+},
+
+currentLocation: {
+  lat: { type: Number, default: null },
+  lng: { type: Number, default: null }
+},
 
   description: {
-    type: String
+    type: String,
+    trim:true
   },
 
   restaurantId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
+    ref: "User",
+     required: true
   },
 
   ngoId: {
@@ -51,7 +59,7 @@ const foodListingSchema = new mongoose.Schema(
 
   status: {
     type: String,
-    enum: ["pending", "accepted", "requested", "assigned", "picked", "completed"],
+    enum: ["pending","accepted","volunteer_requested","volunteer_assigned","picked","completed"],
     default: "pending"
   },
 
@@ -64,11 +72,6 @@ const foodListingSchema = new mongoose.Schema(
   requestedVolunteers: [
     { type: mongoose.Schema.Types.ObjectId, ref: "User" }
   ],
-
-  assignedVolunteer: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
-  }
 
 },
 { timestamps: true }

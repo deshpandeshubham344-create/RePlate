@@ -255,6 +255,7 @@ button:active {
 <script>
 let selectedLat = null;
 let selectedLng = null;
+let selectedAddress = "";
 let method = "address";
 
 function selectMethod(type) {
@@ -289,7 +290,7 @@ window.addEventListener("message", async (event) => {
 
   // 🔥 Convert to real address
   const res = await fetch(
-    `https://api.openrouteservice.org/geocode/reverse?api_key=YOUR_API_KEY&point.lon=${lng}&point.lat=${lat}`
+    `https://api.openrouteservice.org/geocode/reverse?api_key=eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImRlMTQ1NWVmNTBjYzQ2MzA5ZTRiZGUwYjUwNDBiZTYwIiwiaCI6Im11cm11cjY0In0=&point.lon=${lng}&point.lat=${lat}`
   );
 
   const data = await res.json();
@@ -300,6 +301,7 @@ window.addEventListener("message", async (event) => {
     place = data.features[0].properties.label;
   }
 
+  selectedAddress = place;
   document.getElementById("selectedLocation").innerText = "📍 " + place;
 });
 
@@ -308,10 +310,10 @@ async function registerUser() {
   const msg = document.getElementById("message");
   msg.style.display = "none";
 
-  const name = document.getElementById("name").value;
-  const email = document.getElementById("email").value;
+  const name = document.getElementById("name").value.trim();
+  const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
-  const phone = document.getElementById("phone").value;
+  const phone = document.getElementById("phone").value.trim();
   const role = document.getElementById("role").value;
 
   let vehicleType = null;
@@ -320,71 +322,72 @@ async function registerUser() {
     vehicleType = document.getElementById("vehicleType").value;
   }
 
-  // 🔥 GET REAL GPS LOCATION
-  navigator.geolocation.getCurrentPosition(
+  // Check if a location has been selected
+  if (
+    selectedLat === null ||
+    selectedLng === null ||
+    selectedAddress === ""
+  ) {
+    msg.className = "error";
+    msg.innerText = "Please select a location on the map.";
+    msg.style.display = "block";
+    return;
+  }
 
-    async (position) => {
+  try {
 
-      try {
+    console.log({
+      name,
+      email,
+      password,
+      phone,
+      address: selectedAddress,
+      role,
+      vehicleType,
+      lat: selectedLat,
+      lng: selectedLng
+    });
 
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
+    const res = await fetch("http://localhost:5000/api/auth/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name,
+        email,
+        password,
+        phone,
+        address: selectedAddress,
+        role,
+        vehicleType,
+        lat: selectedLat,
+        lng: selectedLng
+      })
+    });
 
-        console.log("GPS:", lat, lng);
+    const data = await res.json();
 
-        const res = await fetch("http://localhost:5000/api/auth/register", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            name,
-            email,
-            password,
-            phone,
-            role,
-            vehicleType,
-            lat,
-            lng
-          })
-        });
-
-        const data = await res.json();
-
-        // 🔥 SHOW BACKEND MESSAGE
-        if (!res.ok) {
-          throw new Error(data.message);
-        }
-
-        msg.className = "success";
-        msg.innerText = "Registered successfully!";
-        msg.style.display = "block";
-
-        setTimeout(() => {
-          window.location.href = "login.html";
-        }, 1000);
-
-      } catch (err) {
-
-        msg.className = "error";
-        msg.innerText = err.message;
-        msg.style.display = "block";
-
-        console.log(err);
-      }
-
-    },
-
-    (error) => {
-
-      msg.className = "error";
-      msg.innerText = "Location permission denied ❌";
-      msg.style.display = "block";
-
-      console.log(error);
+    if (!res.ok) {
+      throw new Error(data.message);
     }
 
-  );
+    msg.className = "success";
+    msg.innerText = "Registered successfully!";
+    msg.style.display = "block";
+
+    setTimeout(() => {
+      window.location.href = "login.html";
+    }, 1000);
+
+  } catch (err) {
+
+    msg.className = "error";
+    msg.innerText = err.message;
+    msg.style.display = "block";
+
+    console.error(err);
+  }
 }
 
 

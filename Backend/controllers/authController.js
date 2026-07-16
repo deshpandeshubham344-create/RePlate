@@ -9,10 +9,16 @@ exports.registerUser = async (req, res) => {
     const { name, email, password, phone, address, role, vehicleType, lat, lng } = req.body;
 
     // check required fields
-    if (!name || !email || !password || !phone || !role) {
+    if (!name || !email || !password || !phone || !address || !role ||  lat === undefined ||
+    lng === undefined) {
       return res.status(400).json({ message: "Please fill all required fields" });
     }
 
+    if (role === "volunteer" && !vehicleType) {
+  return res.status(400).json({
+    message: "Vehicle type is required for volunteers"
+  });
+  }
     // check if user already exists
     const existingUser = await User.findOne({ email });
 
@@ -37,7 +43,10 @@ exports.registerUser = async (req, res) => {
       vehicleType: role === "volunteer" ? vehicleType : null,
 
       // 📍 location (safe add)
-      location: lat && lng ? { lat, lng } : null
+     location:
+    lat !== undefined && lng !== undefined
+        ? { lat, lng }
+        : null
     });
 
     await user.save();
@@ -85,9 +94,10 @@ exports.loginUser = async (req, res) => {
       message: "Login successful",
       token: token,
       user: {
-        name: user.name,   // 🔥 ADD THIS
-        role: user.role    // (optional but useful)
-      }
+    id: user._id,
+    name: user.name,
+    role: user.role
+    }
     });
 
   } catch (error) {

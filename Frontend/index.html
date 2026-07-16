@@ -289,25 +289,25 @@ body {
 
     <div class="stat-card">
       <div class="icon">🍱</div>
-      <h3><span id="meals">0</span>+</h3>
+      <h3><span id="meals">0</span></h3>
       <p>Meals Served</p>
     </div>
 
     <div class="stat-card">
       <div class="icon">🚚</div>
-      <h3><span id="volunteers">0</span>+</h3>
+      <h3><span id="volunteers">0</span></h3>
       <p>Volunteers</p>
     </div>
 
     <div class="stat-card">
       <div class="icon">🏢</div>
-      <h3><span id="restaurants">0</span>+</h3>
+      <h3><span id="restaurants">0</span></h3>
       <p>Restaurants</p>
     </div>
 
     <div class="stat-card">
       <div class="icon">🤝</div>
-      <h3><span id="ngos">0</span>+</h3>
+      <h3><span id="ngos">0</span></h3>
       <p>NGOs</p>
     </div>
 
@@ -349,15 +349,21 @@ async function loadStats() {
 }
 
 function animateValue(id, end) {
+  const obj = document.getElementById(id);
+
+  if (end === 0) {
+    obj.innerText = "0";
+    return;
+  }
+
   let start = 0;
-  let duration = 1500;
-  let stepTime = Math.max(Math.floor(duration / end), 20);
+  const duration = 1500;
+  const stepTime = Math.max(Math.floor(duration / end), 20);
 
-  let obj = document.getElementById(id);
-
-  let timer = setInterval(() => {
+  const timer = setInterval(() => {
     start++;
-    obj.innerText = start.toLocaleString();
+
+    obj.innerText = start.toLocaleString() + "+";
 
     if (start >= end) {
       clearInterval(timer);
