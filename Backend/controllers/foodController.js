@@ -2,11 +2,19 @@ const FoodListing = require("../models/FoodListing");
 const axios = require("axios");
 const polyline = require("@mapbox/polyline");
 const User = require("../models/User");
+const TEST_MODE = process.env.TEST_MODE === "true";
 
 
 // DISTANCE FUNCTION
 function getDistance(lat1, lon1, lat2, lon2) {
-  if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
+  if (
+    lat1 == null ||
+    lon1 == null ||
+    lat2 == null ||
+    lon2 == null
+) {
+    return Infinity;
+}
 
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -34,19 +42,25 @@ exports.createFoodListing = async (req, res) => {
     }
 
     const food = new FoodListing({
-      foodName,
-      quantity,
-      pickupTime,
-      description,
+  foodName,
+  quantity,
+  pickupTime,
+  description,
 
-      restaurantId: req.user.id,
-      restaurantLocation: restaurant.location,
+  restaurantId: req.user.id,
+  restaurantLocation: restaurant.location,
 
-      status: "pending",
+  // ✅ Food initially stays at the restaurant
+  currentLocation: {
+    lat: restaurant.location.lat,
+    lng: restaurant.location.lng
+  },
 
-      // ✅ IMAGE FIELD
-      image: req.file ? req.file.filename : null
-    });
+  status: "pending",
+
+  // ✅ IMAGE FIELD
+  image: req.file ? req.file.filename : null
+});
 
     await food.save();
 
@@ -70,32 +84,38 @@ exports.getAvailableFood = async (req, res) => {
 
     const foods = await FoodListing.find({
       status: { 
-        $in: ["pending", "accepted", "requested", "assigned", "picked", "completed"] 
+        $in: [
+    "pending",
+    "accepted_by_ngo",
+    "volunteer_requested",
+    "volunteer_assigned",
+    "picked",
+    "completed"
+] 
       }
-    }).populate("restaurantId");
+    }).populate("restaurantId")
+.populate("ngoId")
+.populate("volunteerResponses.volunteer")
 
     const nearbyFoods = [];
 
-    for (let food of foods) {
+   for (let food of foods) {
 
-      if (!food.restaurantLocation) continue;
+    if (!food.restaurantLocation) continue;
 
-      const dist = getDistance(
+    const dist = getDistance(
         ngo.location.lat,
         ngo.location.lng,
         food.restaurantLocation.lat,
         food.restaurantLocation.lng
-      );
+    );
 
-      // 🔥 KEEP YOUR 5KM FILTER
-      if (dist <= 5) {
-        nearbyFoods.push({
-          ...food._doc,
-          distance: dist
-        });
-      }
-    }
+    nearbyFoods.push({
+        ...food._doc,
+        distance: Number(dist.toFixed(2))
+    });
 
+}
     res.json({ foodListings: nearbyFoods });
 
   } catch (err) {
@@ -107,93 +127,229 @@ exports.getAvailableFood = async (req, res) => {
 // NGO ACCEPT
 exports.acceptFoodRequest = async (req, res) => {
   try {
+
     const food = await FoodListing.findById(req.params.foodId);
 
-    food.status = "accepted";
+    if (!food) {
+      return res.status(404).json({
+        message: "Food not found"
+      });
+    }
+
+    const ngo = await User.findById(req.user.id);
+
+    if (!ngo.location || !food.restaurantLocation) {
+      return res.status(400).json({
+        message: "Location missing"
+      });
+    }
+
+    const distance = getDistance(
+      ngo.location.lat,
+      ngo.location.lng,
+      food.restaurantLocation.lat,
+      food.restaurantLocation.lng
+    );
+
+    const override = req.query.override === "true";
+
+    if (distance > 5 && !override) {
+      return res.status(400).json({
+        message: `Food is ${distance.toFixed(1)} km away`,
+        distance,
+        requireOverride: true
+      });
+    }
+
+    food.status = "accepted_by_ngo";
     food.ngoId = req.user.id;
 
     await food.save();
 
-    res.json({ message: "Accepted. Request volunteers." });
+    res.json({
+      message: "Food accepted successfully"
+    });
 
-  } catch {
-    res.status(500).json({ message: "Error" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: "Error"
+    });
   }
 };
+
 
 // REQUEST VOLUNTEERS
 exports.requestVolunteers = async (req, res) => {
   try {
+
     const food = await FoodListing.findById(req.params.foodId);
 
     if (!food) {
-      return res.status(404).json({ message: "Food not found" });
+      return res.status(404).json({
+        message: "Food not found"
+      });
     }
 
-    if (!food.restaurantLocation || food.restaurantLocation.lat == null) {
-      return res.status(400).json({ message: "Restaurant location missing" });
+    if (!food.restaurantLocation) {
+      return res.status(400).json({
+        message: "Restaurant location missing"
+      });
     }
 
-    // ✅ ONLY FREE VOLUNTEERS
     const volunteers = await User.find({
       role: "volunteer",
       isAvailable: true,
       isBusy: false
     });
 
-    // 🔥 JUST FOR INFO (UI PURPOSE)
-    const nearbyVolunteers = volunteers.filter(v => {
-      if (!v.location) return false;
+    // 🔥 Reset previous request
+    food.volunteerResponses = [];
+    food.volunteerId = null;
 
-      const dist = getDistance(
-        v.location.lat,
-        v.location.lng,
-        food.restaurantLocation.lat,
-        food.restaurantLocation.lng
-      );
-
-      return dist <= 5;
-    });
-
-    // ✅ SEND TO ALL FREE VOLUNTEERS
     food.requestedVolunteers = volunteers.map(v => v._id);
-    food.status = "requested";
+    // NGO is waiting for volunteer responses
+    food.status = "volunteer_requested";
+
+    console.log("Requested Volunteers:", food.requestedVolunteers);
+console.log("Status:", food.status);
 
     await food.save();
 
-    // 🔔 SOCKET
+    const verify = await FoodListing.findById(food._id);
+
+console.log("Saved Requested Volunteers:", verify.requestedVolunteers);
+console.log("Saved Status:", verify.status);
+
     const io = req.app.get("io");
 
     io.emit("newRequest", {
-      message: `🚚 Request sent to ${volunteers.length} volunteers (${nearbyVolunteers.length} nearby)`,
-      nearbyCount: nearbyVolunteers.length,
-      totalVolunteers: volunteers.length
+      foodId: food._id,
+      message: "New delivery request"
     });
 
     res.json({
-      message: `${volunteers.length} volunteers notified`,
-      totalVolunteers: volunteers.length,
-      nearbyVolunteers: nearbyVolunteers.length
+      message: `${volunteers.length} volunteers notified`
     });
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Error requesting volunteers" });
+    res.status(500).json({
+      message: "Error requesting volunteers"
+    });
   }
 };
 
-// VOLUNTEER ACCEPT
+// NGO ASSIGNS A VOLUNTEER
+exports.assignVolunteer = async (req, res) => {
+  try {
+
+    const { volunteerId } = req.body;
+
+    const food = await FoodListing.findById(req.params.foodId);
+
+    if (!food) {
+      return res.status(404).json({
+        message: "Food not found"
+      });
+    }
+
+    // Food should still be waiting for assignment
+    if (food.status !== "volunteer_requested") {
+      return res.status(400).json({
+        message: "Volunteer can no longer be assigned."
+      });
+    }
+
+    // Volunteer must have accepted
+    const response = food.volunteerResponses.find(
+      v => String(v.volunteer) === String(volunteerId)
+    );
+
+    if (!response) {
+      return res.status(400).json({
+        message: "This volunteer has not accepted the request."
+      });
+    }
+
+    const volunteer = await User.findById(volunteerId);
+
+    if (!volunteer) {
+      return res.status(404).json({
+        message: "Volunteer not found"
+      });
+    }
+
+    // Volunteer became busy meanwhile
+    if (volunteer.isBusy) {
+      return res.status(400).json({
+        message: "Volunteer is already busy."
+      });
+    }
+
+    // Assign volunteer
+    food.volunteerId = volunteer._id;
+    food.status = "volunteer_assigned";
+
+    // Update volunteer responses
+    food.volunteerResponses.forEach(v => {
+
+      if (String(v.volunteer) === String(volunteerId)) {
+        v.status = "assigned";
+      } else if (v.status === "accepted") {
+        v.status = "not_selected";
+      }
+
+    });
+
+    // Volunteer is now busy
+    volunteer.isBusy = true;
+    volunteer.isAvailable = false;
+
+    await volunteer.save();
+    await food.save();
+
+    res.json({
+      message: "Volunteer assigned successfully",
+      volunteerId: volunteer._id
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: "Error assigning volunteer"
+    });
+  }
+};
+// VOLUNTEER ACCEPT REQUEST
 exports.acceptRequest = async (req, res) => {
   try {
+
     const food = await FoodListing.findById(req.params.foodId)
       .populate("restaurantId");
 
+    if (!food) {
+      return res.status(404).json({
+        message: "Food not found"
+      });
+    }
+
     const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "Volunteer not found"
+      });
+    }
+
     const userId = req.user.id;
 
+    // Volunteer already delivering?
     const existingDelivery = await FoodListing.findOne({
-      assignedVolunteer: userId,
-      status: { $in: ["assigned", "picked"] }
+      volunteerId: userId,
+      status: {
+        $in: ["volunteer_assigned", "picked"]
+      }
     });
 
     if (existingDelivery) {
@@ -208,18 +364,31 @@ exports.acceptRequest = async (req, res) => {
       });
     }
 
-    const allowed = food.requestedVolunteers.some(
-      id => id.toString() === userId
-    );
-
-    if (!allowed) {
-      return res.status(400).json({ message: "Not allowed" });
+    // Food should still be requesting volunteers
+    if (food.status !== "volunteer_requested") {
+      return res.status(400).json({
+        message: "This request is no longer accepting volunteers"
+      });
     }
 
     if (!user.location || !food.restaurantId?.location) {
-      return res.status(400).json({ message: "Location missing" });
+      return res.status(400).json({
+        message: "Location missing"
+      });
     }
 
+    // Already responded?
+    const alreadyAccepted = food.volunteerResponses.find(
+      v => String(v.volunteer) === String(userId)
+    );
+
+    if (alreadyAccepted) {
+      return res.status(400).json({
+        message: "You already responded"
+      });
+    }
+
+    // Calculate distance
     const dist = getDistance(
       user.location.lat,
       user.location.lng,
@@ -233,34 +402,37 @@ exports.acceptRequest = async (req, res) => {
 
     if (dist > 5 && !override) {
       return res.status(400).json({
-        message: "Too far from restaurant",
+        message: "You are far away from the restaurant.",
         requireOverride: true
       });
     }
 
-    food.assignedVolunteer = userId;
-    food.status = "assigned";
-    food.requestedVolunteers = [];
-    food.currentLocation = user.location;
+    // ETA calculation
+    const eta = Math.ceil(dist * 3);
+
+    // Store volunteer response
+    food.volunteerResponses.push({
+      volunteer: user._id,
+      status: "accepted",
+      distance: Number(dist.toFixed(2)),
+      eta,
+      vehicleType: user.vehicleType
+    });
+
+    // Store volunteer's latest location
+    food.volunteerCurrentLocation = user.location;
 
     await food.save();
 
-    user.isBusy = true;
-    await user.save();
-
-    const io = req.app.get("io");
-
-    io.emit("volunteerAssigned", {
-      message: "✅ Volunteer assigned successfully!",
-      volunteerId: userId,
-      foodId: food._id
+    res.json({
+      message: "Response sent to NGO successfully"
     });
-
-    res.json({ message: "Accepted delivery" });
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Error" });
+    res.status(500).json({
+      message: "Error accepting request"
+    });
   }
 };
 
@@ -271,36 +443,74 @@ exports.updateLocation = async (req, res) => {
 
     const food = await FoodListing.findById(req.params.foodId);
 
-    food.currentLocation = {
-      lat: Number(lat),
-      lng: Number(lng)
+    if (!food) {
+      return res.status(404).json({
+        message: "Food not found"
+      });
+    }
+
+    if (!TEST_MODE) {
+
+    food.volunteerCurrentLocation = {
+        lat: Number(lat),
+        lng: Number(lng)
     };
+
+    await User.findByIdAndUpdate(req.user.id, {
+        location: {
+            lat: Number(lat),
+            lng: Number(lng)
+        }
+    });
+
+}
+    // After pickup, food moves with volunteer
+    if (food.status === "picked") {
+      food.currentLocation = {
+        lat: Number(lat),
+        lng: Number(lng)
+      };
+    }
 
     await food.save();
 
-    res.json({ message: "Location updated" });
+    res.json({
+      message: "Location updated"
+    });
 
-  } catch {
-    res.status(500).json({ message: "Error" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: "Error updating location"
+    });
   }
 };
 
 
 // GET LIVE LOCATION
-
 exports.getLiveLocation = async (req, res) => {
   try {
     const food = await FoodListing.findById(req.params.foodId);
 
+    if (!food) {
+      return res.status(404).json({
+        message: "Food not found"
+      });
+    }
+
     res.json({
-      currentLocation: food?.currentLocation || null
+      status: food.status,
+      volunteerCurrentLocation: food.volunteerCurrentLocation,
+      currentLocation: food.currentLocation
     });
 
-  } catch {
-    res.status(500).json({ message: "Error" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: "Error getting live location"
+    });
   }
 };
-
 
 // ROUTE API 
 
@@ -309,15 +519,18 @@ exports.getRoute = async (req, res) => {
     const food = await FoodListing.findById(req.params.foodId)
       .populate("restaurantId")
       .populate("ngoId")
-      .populate("assignedVolunteer");
+      .populate("volunteerId");
 
     if (!food) return res.status(404).json({ message: "Not found" });
 
     let current = null;
 
 // 🔥 ALWAYS PRIORITIZE currentLocation
-if (food.currentLocation && food.currentLocation.lat != null) {
-  current = food.currentLocation;
+if (food.status === "volunteer_assigned") {
+    current = food.volunteerCurrentLocation;
+}
+else if (food.status === "picked") {
+    current = food.currentLocation;
 }
     if (!current) {
       return res.json({
@@ -330,7 +543,7 @@ if (food.currentLocation && food.currentLocation.lat != null) {
     let start = [current.lng, current.lat];
     let end;
 
-    if (food.status === "assigned") {
+    if (food.status === "volunteer_assigned") {
       end = [
         food.restaurantId.location.lng,
         food.restaurantId.location.lat
@@ -365,15 +578,25 @@ if (food.currentLocation && food.currentLocation.lat != null) {
 
     const routeData = response.data.routes[0];
 
+    console.log({
+    status: food.status,
+    current,
+    volunteerCurrentLocation: food.volunteerCurrentLocation,
+    foodCurrentLocation: food.currentLocation
+});
+
     res.json({
-      route: polyline.decode(routeData.geometry),
-      distance: routeData.summary.distance / 1000,
-      duration: routeData.summary.duration / 60,
-      status: food.status,
-      currentLocation: current,
-      restaurantLocation: food.restaurantId.location,
-      ngoLocation: food.ngoId.location
-    });
+    route: polyline.decode(routeData.geometry),
+    distance: routeData.summary.distance / 1000,
+    duration: routeData.summary.duration / 60,
+    status: food.status,
+
+    currentLocation: current,
+    volunteerCurrentLocation: food.volunteerCurrentLocation,
+
+    restaurantLocation: food.restaurantId.location,
+    ngoLocation: food.ngoId.location
+});
 
   } catch (err) {
     res.status(500).json({ message: "Route error" });
@@ -381,29 +604,58 @@ if (food.currentLocation && food.currentLocation.lat != null) {
 };
 
 // PICKED
-exports.markPicked = async (req, res) => {
+exports.confirmPickup = async (req, res) => {
   try {
-    const food = await FoodListing.findById(req.params.foodId)
-      .populate("restaurantId");
 
-    const dist = getDistance(
-      food.currentLocation?.lat,
-      food.currentLocation?.lng,
-      food.restaurantId?.location?.lat,
-      food.restaurantId?.location?.lng
-    );
+    const food = await FoodListing.findById(req.params.foodId);
 
-    if (dist > 0.3) {
-      return res.status(400).json({ message: "Too far from restaurant" });
+    if (!food) {
+      return res.status(404).json({
+        message: "Food not found"
+      });
     }
 
-    food.status = "picked";
+    if (food.status !== "volunteer_assigned") {
+      return res.status(400).json({
+        message: "Volunteer has not been assigned yet"
+      });
+    }
+
+    // Food now starts moving with the volunteer
+    const dist = getDistance(
+    food.volunteerCurrentLocation?.lat,
+    food.volunteerCurrentLocation?.lng,
+    food.restaurantLocation.lat,
+    food.restaurantLocation.lng
+);
+
+if (dist > 0.3) {
+    return res.status(400).json({
+        message: "Volunteer has not reached the restaurant"
+    });
+}
+
+// Food now starts moving with the volunteer
+food.currentLocation = {
+    lat: food.volunteerCurrentLocation.lat,
+    lng: food.volunteerCurrentLocation.lng
+};
+
+food.status = "picked";
+
     await food.save();
 
-    res.json({ message: "Picked" });
+    res.json({
+      message: "Pickup confirmed successfully",
+      food
+    });
 
-  } catch {
-    res.status(500).json({ message: "Error" });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      message: "Error confirming pickup"
+    });
   }
 };
 
@@ -430,13 +682,12 @@ exports.completeDelivery = async (req, res) => {
     if (dist > 0.3) {
       return res.status(400).json({ message: "Too far from NGO" });
     }
-
     // ✅ COMPLETE DELIVERY
     food.status = "completed";
     await food.save();
 
     // 🔥 NEW: FREE VOLUNTEER
-    const volunteer = await User.findById(food.assignedVolunteer);
+    const volunteer = await User.findById(food.volunteerId);
 
     if (volunteer) {
       volunteer.isBusy = false;
@@ -461,17 +712,21 @@ exports.completeDelivery = async (req, res) => {
 
 // VOLUNTEER FOOD
 exports.getVolunteerFood = async (req, res) => {
+  console.log("Logged-in Volunteer ID:", req.user.id);
   try {
     const foods = await FoodListing.find({
       $or: [
         { requestedVolunteers: req.user.id },
-        { assignedVolunteer: req.user.id }
+        { volunteerId: req.user.id }
       ]
     })
       .populate("restaurantId")
       .populate("ngoId")
-      .populate("assignedVolunteer");
+      .populate("volunteerId");
 
+      console.log("Logged-in Volunteer ID:", req.user.id);
+      console.log("Foods Found:", foods.length);
+      console.log(foods);
     res.json({ foodListings: foods });
 
   } catch {
@@ -526,17 +781,4 @@ exports.rejectRequest = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "Error rejecting request" });
   }
-};
-
-exports.updateLocation = async (req, res) => {
-  const { lat, lng } = req.body;
-
-  const food = await FoodListing.findById(req.params.foodId);
-
-  food.currentLocation = { lat, lng };
-
-  await food.save();
-
-  res.json({ message: "Location updated" });
-  console.log("UPDATE LOCATION HIT", req.body);
 };

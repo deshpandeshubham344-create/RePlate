@@ -8,10 +8,24 @@ const foodListingSchema = new mongoose.Schema(
     trim:true
   },
 
-  quantity: {
-    type: Number,
-    required: true
-  },
+ quantity: {
+  type: Number,
+  required: true,
+  min: 1
+},
+
+quantityUnit: {
+  type: String,
+  enum: [
+    "plates",
+    "meals",
+    "packets",
+    "boxes",
+    "kg",
+    "litres"
+  ],
+  default: "plates"
+},
 
   pickupTime: {
     type: String,
@@ -59,7 +73,7 @@ currentLocation: {
 
   status: {
     type: String,
-    enum: ["pending","accepted","volunteer_requested","volunteer_assigned","picked","completed"],
+    enum: ["pending","accepted_by_ngo","volunteer_requested","volunteer_assigned","picked","completed"],
     default: "pending"
   },
 
@@ -70,9 +84,41 @@ currentLocation: {
   },
 
   requestedVolunteers: [
-    { type: mongoose.Schema.Types.ObjectId, ref: "User" }
-  ],
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  }
+],
+volunteerResponses: [
+{
+    volunteer: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+    },
 
+    status: {
+    type: String,
+    enum: [
+        "accepted",
+        "rejected",
+        "assigned",
+        "not_selected"
+    ],
+    default: "accepted"
+},
+
+    distance: Number,
+
+    eta: Number,
+
+    vehicleType: String,
+
+    acceptedAt: {
+        type: Date,
+        default: Date.now
+    }
+}
+]
 },
 { timestamps: true }
 );

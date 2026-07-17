@@ -176,6 +176,14 @@ button:hover {
 
   <input type="text" id="foodName" placeholder="Food Name" />
   <input type="text" id="quantity" placeholder="Quantity" />
+  <select id="quantityUnit">
+    <option value="plates">Plates</option>
+    <option value="meals">Meals</option>
+    <option value="packets">Packets</option>
+    <option value="boxes">Boxes</option>
+    <option value="kg">Kg</option>
+    <option value="litres">Litres</option>
+</select>
   <input type="datetime-local" id="pickupTime" />
   <textarea id="description" placeholder="Description"></textarea>
   <input type="file" id="foodImage" accept="image/*" capture="environment">
@@ -196,6 +204,7 @@ async function createFood() {
 
     formData.append("foodName", document.getElementById("foodName").value);
     formData.append("quantity", document.getElementById("quantity").value);
+    formData.append("quantityUnit", document.getElementById("quantityUnit").value);
     formData.append("pickupTime", document.getElementById("pickupTime").value);
     formData.append("description", document.getElementById("description").value);
 

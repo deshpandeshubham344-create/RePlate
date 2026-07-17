@@ -96,8 +96,10 @@ async function fetchRoute() {
     // ================= STATUS =================
     let statusText = "⏳ Waiting...";
 
-  if (data.status === "assigned" && data.currentLocation && data.restaurantLocation) {
+  if (data.status === "volunteer_assigned" &&data.currentLocation && data.restaurantLocation) {
 
+    console.log("Volunteer Location:", data.currentLocation);
+    console.log("Restaurant Location:", data.restaurantLocation);
   const dist = calculateDistance(
     data.currentLocation.lat,
     data.currentLocation.lng,
@@ -183,7 +185,7 @@ async function fetchRoute() {
     if (window.restaurantMarker) map.removeLayer(window.restaurantMarker);
     if (window.ngoMarker) map.removeLayer(window.ngoMarker);
 
-    if (data.status === "assigned" && data.restaurantLocation) {
+    if (data.status === "volunteer_assigned" && data.restaurantLocation) {
       window.restaurantMarker = L.marker(
         [data.restaurantLocation.lat, data.restaurantLocation.lng],
         { icon: restaurantIcon }
@@ -218,6 +220,50 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
+function startLiveTracking() {
+
+    if (!navigator.geolocation) {
+        alert("Geolocation not supported");
+        return;
+    }
+
+    navigator.geolocation.watchPosition(
+
+        async (position) => {
+
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            console.log("Volunteer GPS:", lat, lng);
+
+            try {
+
+                await fetch(`http://localhost:5000/api/food/location/${FOOD_ID}`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: "Bearer " + TOKEN
+                    },
+                    body: JSON.stringify({ lat, lng })
+                });
+
+            } catch (err) {
+                console.log(err);
+            }
+            console.log("Location sent successfully");
+
+        },
+
+        (err) => console.log(err),
+
+        {
+            enableHighAccuracy: true,
+            maximumAge: 0,
+            timeout: 5000
+        }
+
+    );
+}
+
 // ================= ETA =================
 function fetchLiveStats() {
 
@@ -225,7 +271,7 @@ function fetchLiveStats() {
 
   const curr = latestData.currentLocation;
 
-  let dest = latestData.status === "assigned"
+  let dest = latestData.status === "volunteer_assigned"
     ? latestData.restaurantLocation
     : latestData.ngoLocation;
 
@@ -260,6 +306,9 @@ window.onpopstate = function () {
     window.location.href = "index.html";
   }
 };
+if (FOOD_ID) {
+    startLiveTracking();
+}
 </script>
 </body>
 </html>
