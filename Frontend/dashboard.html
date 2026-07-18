@@ -125,6 +125,14 @@
   transform: scale(1.05);
 }
 
+button:disabled {
+  background: #9ca3af !important;
+  color: white;
+  cursor: not-allowed;
+  opacity: 0.7;
+  pointer-events: none;
+  transform: none;
+}
 /* SECONDARY */
 .btn-secondary {
   background: #334155;
@@ -436,6 +444,92 @@ async function loadFood() {
 
 let buttons = "";
 
+// ================= RESTAURANT =================
+if (user.role === "restaurant") {
+
+  // Waiting for NGO to accept
+  if (food.status === "pending") {
+
+    buttons += `
+      <p style="color:orange;font-weight:bold;">
+        ⏳ Waiting for NGO to accept...
+      </p>
+    `;
+
+  }
+
+  // NGO accepted, waiting for volunteer requests
+  else if (food.status === "accepted_by_ngo") {
+
+    buttons += `
+      <p style="color:orange;font-weight:bold;">
+        ⏳ NGO is requesting volunteers...
+      </p>
+    `;
+
+  }
+
+  // Volunteers are responding
+  else if (food.status === "volunteer_requested") {
+
+    buttons += `
+      <p style="color:orange;font-weight:bold;">
+        ⏳ Waiting for NGO to assign a volunteer...
+      </p>
+    `;
+
+  }
+
+  // Volunteer assigned → Restaurant can track
+  else if (food.status === "volunteer_assigned") {
+
+  buttons += `
+    <button class="btn-secondary"
+      onclick="trackVolunteer('${food._id}')">
+      🚗 Track Volunteer
+    </button>
+  `;
+
+  if (food.restaurantReached) {
+    buttons += `
+      <button class="btn-primary"
+        onclick="confirmPickup('${food._id}')">
+        Confirm Pickup
+      </button>
+    `;
+  } else {
+    buttons += `
+      <p style="color:orange;font-weight:bold;">
+        ⏳ Waiting for Volunteer to Reach Restaurant...
+      </p>
+    `;
+  }
+}
+
+  // Volunteer picked up food
+  else if (food.status === "picked") {
+
+    buttons += `
+      <p style="color:green;font-weight:bold;">
+        ✅ Food Picked Up
+      </p>
+    `;
+
+  }
+
+  // Delivery completed
+  else if (food.status === "completed") {
+
+    buttons += `
+      <span style="color:green;font-weight:bold;">
+        ✅ Food Delivered Successfully
+      </span>
+    `;
+
+  }
+
+}
+
 // ================= NGO =================
 if (user.role === "ngo") {
 
@@ -509,32 +603,39 @@ if (user.role === "ngo") {
   }
 
 }
-
-  else if (food.status === "volunteer_assigned") {
-
-    buttons += `
-      <button class="btn-secondary"
-        onclick="trackVolunteer('${food._id}')">
-
-        Track Volunteer
-
-      </button>
-    `;
-
-  }
-
-  else if (food.status === "picked") {
+else if (food.status === "volunteer_assigned") {
 
     buttons += `
-      <button class="btn-secondary"
-        onclick="trackDelivery('${food._id}')">
-
-        Track Delivery
-
-      </button>
+      <p style="color:orange;font-weight:bold;">
+        ⏳ Waiting for volunteer to pick up the food...
+      </p>
     `;
 
-  }
+}
+
+else if (food.status === "picked") 
+    {
+    if (food.ngoReached) 
+    {
+        buttons += `
+            <button
+                class="btn-primary"
+                onclick="completeDelivery('${food._id}')">
+                Confirm Delivery
+            </button>
+        `;
+    }
+     else 
+     {
+        buttons += `
+            <button
+                class="btn-secondary"
+                onclick="trackDelivery('${food._id}')">
+                Track Delivery
+        </button>
+        `;
+    }
+}
 
   else if (food.status === "completed") {
 
@@ -544,7 +645,6 @@ if (user.role === "ngo") {
 
 }
 
-// ================= VOLUNTEER =================
 // ================= VOLUNTEER =================
 if (user.role === "volunteer") {
 
@@ -608,22 +708,26 @@ if (user.role === "volunteer") {
   // ---------------- NGO selected this volunteer ----------------
   else if (food.status === "volunteer_assigned" && isMine) {
 
-    buttons += `
-      <button class="btn-secondary"
-        onclick="openMapToRestaurant('${food._id}')">
+buttons += `
+  <button class="btn-secondary"
+    onclick="openMapToRestaurant('${food._id}')">
+    Navigate To Restaurant
+  </button>
 
-        Navigate To Restaurant
+  <button
+      id="pickupBtn-${food._id}"
+      class="btn-primary"
+      disabled>
+      Reach Restaurant
+  </button>
 
-      </button>
+  <p id="restaurantStatus-${food._id}"
+     style="color:orange;font-weight:bold;">
+     ⏳ Navigating to Restaurant...
+  </p>
+`;
 
-      <button id="pickupBtn-${food._id}" disabled>
-
-        Reach Restaurant
-
-      </button>
-    `;
-
-  }
+}
 
   // ---------------- NGO selected someone else ----------------
   else if (food.status === "volunteer_assigned" && !isMine && myResponse) {
@@ -707,10 +811,17 @@ div.innerHTML = `
   }
 
   // 🔥 START LIVE TRACKING
-  if (user.role === "volunteer" && !window.trackingStarted) {
-    window.trackingStarted = true;
-    // startLiveTracking();
-  }
+  if (
+    (user.role === "restaurant" || user.role === "volunteer") &&
+    !window.intervalStarted
+) {
+    window.intervalStarted = true;
+
+    setInterval(() => {
+        console.log("CHECKING IDS:", foodIds);
+        foodIds.forEach(id => checkButtons(id));
+    }, 3000);
+}
 }
 
 
@@ -718,6 +829,7 @@ div.innerHTML = `
 // CHECK BUTTONS
 // =======================
 async function checkButtons(foodId) {
+  console.log("checkButtons called:", foodId);
   try {
 
     const locRes = await fetch(`http://localhost:5000/api/food/location/${foodId}`, {
@@ -725,12 +837,17 @@ async function checkButtons(foodId) {
     });
 
     const locData = await locRes.json();
-    if (!locData.currentLocation) {
-  console.log("No current location yet");
-  return;
+   if (!locData.volunteerCurrentLocation) {
+    console.log("No volunteer location yet");
+    return;
 }
+console.log("Location Data:", locData);
+    const curr =
+    locData.status === "picked"
+        ? locData.currentLocation
+        : locData.volunteerCurrentLocation;
 
-    const curr = locData.currentLocation;
+if (!curr) return;
 
     const res = await fetch(`http://localhost:5000/api/food/${foodId}`, {
       headers: { Authorization: "Bearer " + token }
@@ -740,18 +857,54 @@ async function checkButtons(foodId) {
     console.log("FOOD DATA:", food);
 
     // 🔹 PICKUP
-    const pickupBtn = document.getElementById(`pickupBtn-${foodId}`);
-    if (pickupBtn && food.status === "assigned") {
+// 🔹 REACH RESTAURANT
+const pickupBtn = document.getElementById(`pickupBtn-${foodId}`);
 
-      const rest = food.restaurantId.location;
-      const dist = calculateDistance(curr.lat, curr.lng, rest.lat, rest.lng);
+if (pickupBtn && food.status === "volunteer_assigned") {
 
-      if (dist <= 0.1) {
-        pickupBtn.disabled = false;
-        pickupBtn.innerText = "Pick from Restaurant";
-        pickupBtn.onclick = () => markPicked(foodId);
-      }
+  const rest = food.restaurantId.location;
+  const dist = calculateDistance(curr.lat, curr.lng, rest.lat, rest.lng);
+
+  console.log("Current Location:", curr);
+  console.log("Restaurant Location:", rest);
+  console.log("Distance:", dist);
+
+  if (food.restaurantReached) {
+    pickupBtn.disabled = true;
+    pickupBtn.innerText = "Waiting for Restaurant Confirmation";
+  } else if (dist <= 0.1) {
+    pickupBtn.disabled = false;
+    pickupBtn.innerText = "Reached Restaurant";
+    pickupBtn.onclick = () => reachedRestaurant(foodId);
+  } else {
+    pickupBtn.disabled = true;
+    pickupBtn.innerText = "Reach Restaurant";
+  }
+}
+// 🔹 RESTAURANT CONFIRM PICKUP
+const confirmBtn = document.getElementById(`confirmPickupBtn-${foodId}`);
+
+console.log("Food ID:", foodId);
+console.log("confirmBtn:", confirmBtn);
+console.log("Status:", food.status);
+
+if (confirmBtn && food.status === "volunteer_assigned") {
+
+    console.log("Food Status:", food.status);
+    console.log("restaurantReached:", food.restaurantReached);
+    console.log("confirmBtn.disabled BEFORE:", confirmBtn.disabled);
+
+    if (food.restaurantReached) {
+        confirmBtn.disabled = false;
+        confirmBtn.innerText = "Confirm Pickup";
+    } else {
+        confirmBtn.disabled = true;
+        confirmBtn.innerText = "Waiting for Volunteer";
     }
+
+    console.log("confirmBtn.disabled AFTER:", confirmBtn.disabled);
+} 
+
 
     // 🔹 COMPLETE
     const completeBtn = document.getElementById(`completeBtn-${foodId}`);
@@ -762,14 +915,16 @@ async function checkButtons(foodId) {
       const dist = calculateDistance(curr.lat, curr.lng, ngo.lat, ngo.lng);
 
       console.log("DIST:", dist);
-
-      if (dist <= 0.3) {
-  completeBtn.disabled = false;
-  completeBtn.innerText = "Complete Delivery";
-  completeBtn.onclick = () => completeDelivery(foodId);
+    console.log("Current:", curr);
+console.log("NGO:", ngo);
+console.log("Distance:", dist);
+  if (dist <= 0.1) {
+    completeBtn.disabled = false;
+    completeBtn.innerText = "Reached NGO";
+    completeBtn.onclick = () => reachedNgo(foodId);
 } else {
-  completeBtn.disabled = true;
-  completeBtn.innerText = "Reach NGO";
+    completeBtn.disabled = true;
+    completeBtn.innerText = "Reach NGO";
 }
     }
 
@@ -1015,6 +1170,9 @@ function logout(){
 function trackDelivery(foodId) {
   window.location.href = `map.html?foodId=${foodId}&role=ngo`;
 }
+function trackVolunteer(foodId) {
+    window.location.href = `map.html?foodId=${foodId}&role=restaurant`;
+}
 function openImage(src) {
   const modal = document.getElementById("imageModal");
   const img = document.getElementById("modalImg");
@@ -1084,9 +1242,7 @@ window.onpopstate = function () {
 };
 
 async function assignVolunteer(foodId, volunteerId) {
-
   try {
-
     const res = await fetch(
       `http://localhost:5000/api/food/assign-volunteer/${foodId}`,
       {
@@ -1098,21 +1254,71 @@ async function assignVolunteer(foodId, volunteerId) {
         body: JSON.stringify({ volunteerId })
       }
     );
-
     const data = await res.json();
-
     showToast(data.message);
-
     loadFood();
 
   } catch (err) {
-
     console.log(err);
-
     showToast("Assignment failed", "error");
-
   }
+}
+async function confirmPickup(foodId) {
+    try {
+        const res = await fetch(
+            `http://localhost:5000/api/food/confirm-pickup/${foodId}`,
+            {
+               method: "PUT",
+                headers: {
+                    Authorization: "Bearer " + token
+                }
+            }
+        );
+        const data = await res.json();
+        alert(data.message);
+        loadDashboard();
+    } catch (err) {
+        console.error(err);
+    }
+}
 
+async function reachedRestaurant(foodId) {
+  
+  try {
+    const res = await fetch(
+      `http://localhost:5000/api/food/reached-restaurant/${foodId}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: "Bearer " + token
+        }
+      }
+    );
+    const data = await res.json();
+    alert(data.message);
+    loadDashboard();
+  } 
+  catch (err) {
+    console.error(err);
+  }
+}
+async function reachedNgo(foodId) {
+  try {
+    const res = await fetch(
+      `http://localhost:5000/api/food/reached-ngo/${foodId}`,
+      {
+        method: "PUT",
+        headers: {
+        Authorization: "Bearer " + token
+        }
+      }
+    );
+    const data = await res.json();
+    alert(data.message);
+    loadDashboard();
+  } catch (err) {
+    console.error(err);
+  }
 }
 </script>
 </div>

@@ -306,9 +306,26 @@ window.onpopstate = function () {
     window.location.href = "index.html";
   }
 };
-if (FOOD_ID) {
-    startLiveTracking();
-}
+
+(async () => {
+    try {
+        const res = await fetch("http://localhost:5000/api/config");
+        const config = await res.json();
+
+        console.log("TEST_MODE:", config.TEST_MODE);
+
+        if (FOOD_ID && !config.TEST_MODE) {
+            startLiveTracking();
+        }
+    } catch (err) {
+        console.error("Failed to load config:", err);
+
+        // Optional: start GPS if config can't be loaded
+        if (FOOD_ID) {
+            startLiveTracking();
+        }
+    }
+})();
 </script>
 </body>
 </html>

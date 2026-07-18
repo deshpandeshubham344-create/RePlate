@@ -471,6 +471,9 @@ exports.updateLocation = async (req, res) => {
         lng: Number(lng)
       };
     }
+    console.log("updateLocation before save");
+console.log("restaurantReached =", food.restaurantReached);
+console.log("status =", food.status);
 
     await food.save();
 
@@ -621,15 +624,7 @@ exports.confirmPickup = async (req, res) => {
       });
     }
 
-    // Food now starts moving with the volunteer
-    const dist = getDistance(
-    food.volunteerCurrentLocation?.lat,
-    food.volunteerCurrentLocation?.lng,
-    food.restaurantLocation.lat,
-    food.restaurantLocation.lng
-);
-
-if (dist > 0.3) {
+    if (!food.restaurantReached) {
     return res.status(400).json({
         message: "Volunteer has not reached the restaurant"
     });
@@ -642,6 +637,7 @@ food.currentLocation = {
 };
 
 food.status = "picked";
+food.restaurantReached = false;
 
     await food.save();
 
@@ -691,6 +687,7 @@ exports.completeDelivery = async (req, res) => {
 
     if (volunteer) {
       volunteer.isBusy = false;
+      volunteer.isAvailable = true;
       await volunteer.save();
     }
 
@@ -780,5 +777,61 @@ exports.rejectRequest = async (req, res) => {
 
   } catch (err) {
     res.status(500).json({ message: "Error rejecting request" });
+  }
+};
+
+// Volunteer reached restaurant
+exports.reachedRestaurant = async (req, res) => {
+  try {
+    console.log("Reached Restaurant API HIT");
+    const food = await FoodListing.findById(req.params.foodId);
+
+    if (!food) {
+      return res.status(404).json({
+        message: "Food not found"
+      });
+    }
+
+    food.restaurantReached = true;
+    console.log("Reached API ->", food.restaurantReached);
+
+    await food.save();
+
+    res.json({
+      message: "Restaurant reached successfully."
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: "Server Error"
+    });
+  }
+};
+
+// Volunteer reached NGO
+exports.reachedNgo = async (req, res) => {
+  try {
+
+    const food = await FoodListing.findById(req.params.foodId);
+
+    if (!food) {
+      return res.status(404).json({
+        message: "Food not found"
+      });
+    }
+
+    food.ngoReached = true;
+    await food.save();
+
+    res.json({
+      message: "NGO reached successfully."
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: "Server Error"
+    });
   }
 };

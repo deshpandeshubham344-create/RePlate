@@ -70,6 +70,15 @@ currentLocation: {
     ref: "User",
     default: null
   },
+  restaurantReached: {
+  type: Boolean,
+  default: false
+},
+
+ngoReached: {
+  type: Boolean,
+  default: false
+},
 
   status: {
     type: String,
@@ -95,7 +104,6 @@ volunteerResponses: [
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
     },
-
     status: {
     type: String,
     enum: [

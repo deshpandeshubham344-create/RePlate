@@ -30,7 +30,9 @@ const {
   assignVolunteer,
   acceptRequest,          // ✅ ADD
   rejectRequest,          // ✅ ADD
-  requestVolunteers       // ✅ ADD
+  requestVolunteers,      // ✅ ADD
+  reachedRestaurant,
+  reachedNgo
 } = require("../controllers/foodController");
 
 const {
@@ -67,7 +69,7 @@ router.get("/route/:foodId", verifyToken, authorizeRoles("restaurant", "ngo", "v
 router.put("/confirm-pickup/:foodId",verifyToken,authorizeRoles("restaurant"),confirmPickup);
 
 // 🔥 VOLUNTEER → Complete delivery
-router.put("/complete/:foodId", verifyToken, authorizeRoles("volunteer"), completeDelivery);
+router.put("/complete/:foodId", verifyToken, authorizeRoles("ngo"), completeDelivery);
 
 
 // 🔥 RESTAURANT → My food
@@ -78,6 +80,10 @@ router.get("/volunteer-food", verifyToken, authorizeRoles("volunteer"), getVolun
 
 // 🔥 NGO → Nearby volunteers
 router.get("/nearby-volunteers/:foodId", verifyToken, authorizeRoles("ngo"), getNearbyVolunteers);
+
+router.put("/reached-restaurant/:foodId",verifyToken,authorizeRoles("volunteer"),reachedRestaurant);
+
+router.put("/reached-ngo/:foodId",verifyToken,authorizeRoles("volunteer"),reachedNgo);
 
 
 // ⚠️ KEEP THIS LAST (GENERIC ROUTE)
