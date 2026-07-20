@@ -204,7 +204,31 @@ button:active {
   background: rgba(255,255,255,0.2);
   border-radius: 10px;
 }
+/* Address Suggestions */
 
+#suggestions{
+  width:100%;
+  max-height:180px;
+  overflow-y:auto;
+  background:rgba(255,255,255,0.15);
+  border-radius:10px;
+  margin-top:-5px;
+  margin-bottom:10px;
+  display:none;
+}
+
+.suggestion{
+  padding:12px;
+  cursor:pointer;
+  text-align:left;
+  color:white;
+  border-bottom:1px solid rgba(255,255,255,.15);
+  transition:.3s;
+}
+
+.suggestion:hover{
+  background:rgba(255,255,255,.25);
+}
   </style>
 </head>
 
@@ -218,22 +242,25 @@ button:active {
   <input type="password" id="password" placeholder="Password" />
   <input type="text" id="phone" placeholder="Phone" />
 
-  <!-- 🔥 LOCATION METHOD -->
-  <div class="toggle">
-    <button id="addrBtn" class="active" onclick="selectMethod('address')">Address</button>
-    <button id="mapBtn" onclick="selectMethod('map')">Map</button>
-  </div>
 
-  <!-- ADDRESS INPUT -->
-  <div id="addressField">
-    <textarea id="address" placeholder="Enter Address"></textarea>
-  </div>
+  <!-- Search Address -->
+  <input type="text" id="searchAddress" placeholder="Search Area, Road, City..." autocomplete="off" />
+  
+  <!-- Suggestions -->
+  <div id="suggestions"></div>
+  
+  <!-- House / Flat -->
+  <input type="text" id="houseAddress" placeholder="House / Flat / Shop No." />
+  
+  <!-- Landmark -->
+  <input type="text" id="landmark" placeholder="Landmark (Optional)" />
+  
+  <!-- Map -->
+  <button class="map-btn" onclick="openMapSelector()">
+    📍 Select Exact Location on Map
+  </button>
 
-  <!-- MAP INPUT -->
-  <div id="mapField" style="display:none;">
-    <button class="map-btn" onclick="openMapSelector()">Select Location on Map</button>
-    <p id="selectedLocation" class="location-text"></p>
-  </div>
+<p id="selectedLocation" class="location-text"></p>
 
   <select id="role" onchange="handleRoleChange()">
     <option value="">Select Role</option>
@@ -256,20 +283,7 @@ button:active {
 let selectedLat = null;
 let selectedLng = null;
 let selectedAddress = "";
-let method = "address";
 
-function selectMethod(type) {
-  method = type;
-
-  document.getElementById("addressField").style.display =
-    type === "address" ? "block" : "none";
-
-  document.getElementById("mapField").style.display =
-    type === "map" ? "block" : "none";
-
-  document.getElementById("addrBtn").classList.toggle("active", type === "address");
-  document.getElementById("mapBtn").classList.toggle("active", type === "map");
-}
 
 function handleRoleChange() {
   const role = document.getElementById("role").value;
