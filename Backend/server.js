@@ -10,6 +10,7 @@ const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const foodRoutes = require("./routes/foodRoutes");
 const statsRoutes = require("./routes/stats");
+const locationRoutes = require("./routes/locationRoutes");
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/food", foodRoutes);
 app.use("/api/stats", statsRoutes);
 app.use("/uploads", express.static("uploads"));
+app.use("/api/location", locationRoutes);
 
 // Test route
 app.get("/", (req, res) => {
