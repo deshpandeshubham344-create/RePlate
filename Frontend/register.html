@@ -253,14 +253,23 @@ button:active {
   <input type="text" id="houseAddress" placeholder="House / Flat / Shop No." />
   
   <!-- Landmark -->
-  <input type="text" id="landmark" placeholder="Landmark (Optional)" />
+  <div class="input-group">
+    <input
+        type="text"
+        id="landmark"
+        placeholder="Landmark (Optional)"
+    />
+    <div id="landmarkSuggestions" class="suggestions"></div>
+</div>
   
   <!-- Map -->
-  <button class="map-btn" onclick="openMapSelector()">
-    📍 Select Exact Location on Map
+    <button
+    id="mapButton"
+    class="map-btn"
+    onclick="openMapSelector()">
+    📍 Adjust Exact Location
   </button>
-
-<p id="selectedLocation" class="location-text"></p>
+  <p id="selectedLocation" class="location-text"></p>
 
   <select id="role" onchange="handleRoleChange()">
     <option value="">Select Role</option>
@@ -285,12 +294,56 @@ let selectedLng = null;
 let selectedAddress = "";
 const searchInput = document.getElementById("searchAddress");
 
-let searchTimer;
+function enableAutoSearch(inputId, suggestionId, callback) {
+    // Get the input element (searchAddress, landmark, etc.)
+    const input = document.getElementById(inputId);
+    // Each input gets its own debounce timer
+    let timer;
+    input.addEventListener("input", () => {
+        // Cancel the previous timer if the user keeps typing
+        clearTimeout(timer);
+        // Wait 500ms after the user stops typing
+        timer = setTimeout(() => {
+            // Search using the reusable search function
+            searchLocation(
+                inputId,
+                suggestionId,
+                callback
+            );
+        }, 500);
+    });
+}
+enableAutoSearch(
+    "searchAddress",
+    "suggestions",
+    selectArea
+);
+enableAutoSearch(
+        "landmark",
+        "landmarkSuggestions",
+       selectLandmark
+);
 
 searchInput.addEventListener("input", () => {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
-        searchLocation();
+    searchLocation(
+    "searchAddress",
+    "suggestions",
+    selectArea);
+    }, 500);
+});
+
+const landmarkInput = document.getElementById("landmark");
+let landmarkTimer;
+landmarkInput.addEventListener("input", () => {
+    clearTimeout(landmarkTimer);
+    landmarkTimer = setTimeout(() => {
+        searchLocation(
+            "landmark",
+            "landmarkSuggestions",
+            selectLandmark
+        );
     }, 500);
 });
 
@@ -301,7 +354,11 @@ function handleRoleChange() {
 }
 
 function openMapSelector() {
-  window.open("map-select.html", "_blank");
+    let url = "map-select.html";
+    if (selectedLat && selectedLng) {
+        url += `?lat=${selectedLat}&lng=${selectedLng}`;
+    }
+    window.open(url, "_blank", "width=800,height=600");
 }
 
 // 🔥 Receive map location
@@ -413,42 +470,43 @@ async function registerUser() {
   }
 }
 
-async function searchLocation() {
-    const query = document.getElementById("searchAddress").value.trim();
-    const suggestionBox = document.getElementById("suggestions");
-    if(query.length < 3){
+async function searchLocation(inputId, suggestionId, selectCallback) {
+    const query = document.getElementById(inputId).value.trim();
+    const suggestionBox = document.getElementById(suggestionId);
+    if (query.length < 3) {
         suggestionBox.style.display = "none";
         suggestionBox.innerHTML = "";
         return;
     }
-    try{
+    try {
         const res = await fetch(
-          `http://localhost:5000/api/location/search?q=${encodeURIComponent(query)}`
+            `http://localhost:5000/api/location/search?q=${encodeURIComponent(query)}`
         );
         const places = await res.json();
-        showSuggestions(places);
-    }
-    catch(err){
+        showSuggestions(places, suggestionId, selectCallback);
+    } catch (err) {
         console.log(err);
     }
 }
-function showSuggestions(places){
-    const suggestionBox = document.getElementById("suggestions");
+
+function showSuggestions(places, suggestionId, selectCallback) {
+    const suggestionBox = document.getElementById(suggestionId);
     suggestionBox.innerHTML = "";
-    if(places.length===0){
-        suggestionBox.style.display="none";
+    if (places.length === 0) {
+        suggestionBox.style.display = "none";
         return;
     }
-    suggestionBox.style.display="block";
-    places.forEach(place=>{
-        const div=document.createElement("div");
-        div.className="suggestion";
-        div.innerText=place.display_name;
-        div.onclick = () => selectSuggestion(place);
+    suggestionBox.style.display = "block";
+    places.forEach(place => {
+        const div = document.createElement("div");
+        div.className = "suggestion";
+        div.innerText = place.display_name;
+        div.onclick = () => selectCallback(place);
         suggestionBox.appendChild(div);
     });
 }
-function selectSuggestion(place){
+
+function selectArea(place){
 
     selectedLat = Number(place.lat);
     selectedLng = Number(place.lon);
@@ -461,6 +519,14 @@ function selectSuggestion(place){
 
     document.getElementById("suggestions").style.display = "none";
     document.getElementById("suggestions").innerHTML = "";
+    document.getElementById("mapButton").innerText =
+      "📍 Adjust Exact Location";
+}
+function selectLandmark(place)
+{
+    document.getElementById("landmark").value = place.display_name;
+    document.getElementById("landmarkSuggestions").style.display = "none";
+    document.getElementById("landmarkSuggestions").innerHTML = "";
 }
 function goLogin() {
   window.location.href = "login.html";

@@ -14,9 +14,24 @@
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
-const map = L.map('map').setView([18.5204, 73.8567], 13);
+const params = new URLSearchParams(window.location.search);
+const lat = parseFloat(params.get("lat"));
+const lng = parseFloat(params.get("lng"));
+const defaultLat = !isNaN(lat) ? lat : 18.5204;
+const defaultLng = !isNaN(lng) ? lng : 73.8567;
+const map = L.map("map").setView([defaultLat, defaultLng], 16);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+if (!isNaN(lat) && !isNaN(lng)) {
+    selectedLat = lat;
+    selectedLng = lng;
+    marker = L.marker([lat, lng]).addTo(map);
+    marker.bindPopup(`
+        <b>Selected Location</b><br><br>
+        <button onclick="confirmLocation()">OK</button>
+    `).openPopup();
+}
 
 let marker;
 
@@ -39,8 +54,7 @@ map.on('click', function(e) {
   `).openPopup();
 });
 function confirmLocation() {
-  if (!selectedLat || !selectedLng) return;
-
+  if (selectedLat === null || selectedLng === null) return;
   // send to parent
   window.opener.postMessage({
     lat: selectedLat,
