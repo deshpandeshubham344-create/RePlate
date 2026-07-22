@@ -292,7 +292,6 @@ button:active {
 let selectedLat = null;
 let selectedLng = null;
 let selectedAddress = "";
-const searchInput = document.getElementById("searchAddress");
 
 function enableAutoSearch(inputId, suggestionId, callback) {
     // Get the input element (searchAddress, landmark, etc.)
@@ -319,11 +318,10 @@ enableAutoSearch(
     selectArea
 );
 enableAutoSearch(
-        "landmark",
-        "landmarkSuggestions",
-       selectLandmark
+      "landmark",
+      "landmarkSuggestions",
+      selectLandmark
 );
-
 searchInput.addEventListener("input", () => {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
@@ -331,19 +329,6 @@ searchInput.addEventListener("input", () => {
     "searchAddress",
     "suggestions",
     selectArea);
-    }, 500);
-});
-
-const landmarkInput = document.getElementById("landmark");
-let landmarkTimer;
-landmarkInput.addEventListener("input", () => {
-    clearTimeout(landmarkTimer);
-    landmarkTimer = setTimeout(() => {
-        searchLocation(
-            "landmark",
-            "landmarkSuggestions",
-            selectLandmark
-        );
     }, 500);
 });
 
