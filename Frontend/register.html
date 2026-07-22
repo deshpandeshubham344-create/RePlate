@@ -322,16 +322,6 @@ enableAutoSearch(
       "landmarkSuggestions",
       selectLandmark
 );
-searchInput.addEventListener("input", () => {
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => {
-    searchLocation(
-    "searchAddress",
-    "suggestions",
-    selectArea);
-    }, 500);
-});
-
 function handleRoleChange() {
   const role = document.getElementById("role").value;
   document.getElementById("vehicleField").style.display =
