@@ -401,11 +401,12 @@ exports.acceptRequest = async (req, res) => {
     const override = req.query.override === "true";
 
     if (dist > 5 && !override) {
-      return res.status(400).json({
-        message: "You are far away from the restaurant.",
-        requireOverride: true
-      });
-    }
+  return res.status(400).json({
+    message: `Restaurant is ${dist.toFixed(1)} km away.`,
+    distance: dist,
+    requireOverride: true
+  });
+}
 
     // ETA calculation
     const eta = Math.ceil(dist * 3);

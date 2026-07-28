@@ -2,7 +2,7 @@
 <html>
 <head>
   <title>Dashboard</title>
-
+  <link rel="stylesheet" href="notification.css">
   <style>
    body {
   font-family: 'Poppins', sans-serif;
@@ -249,42 +249,6 @@ button:disabled {
     opacity: 1;
   }
 }
-#toast {
-  position: fixed;
-  bottom: 25px;
-  right: 25px;
-
-  min-width: 220px;
-  max-width: 300px;
-
-  padding: 12px 18px;
-  border-radius: 10px;
-
-  background: #22c55e;
-  color: white;
-
-  font-size: 14px;
-  font-weight: 500;
-
-  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-
-  opacity: 0;
-  transform: translateY(20px);
-
-  transition: all 0.3s ease;
-  z-index: 9999;
-}
-
-/* SHOW */
-#toast.show {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* TYPES */
-#toast.success { background: #22c55e; }
-#toast.error { background: #ef4444; }
-#toast.info { background: #3b82f6; }
 .confirm-box {
   position: fixed;
   bottom: 80px;
@@ -329,7 +293,6 @@ button:disabled {
 }
   </style>
 </head>
-
 <body>
 
 <div class="navbar">
@@ -372,12 +335,14 @@ button:disabled {
   </div>
   <div id="toast"></div>
   <div id="confirmBox" class="confirm-box">
-  <p id="confirmMessage"></p>
-  <div class="confirm-actions">
-    <button onclick="confirmYes()">Yes</button>
-    <button onclick="confirmNo()">Cancel</button>
-  </div>
+    <h3 id="confirmTitle">Distance Warning</h3>
+    <p id="confirmMessage"></p>
+    <div class="confirm-actions">
+        <button onclick="confirmYes()">Yes</button>
+        <button onclick="confirmNo()">Cancel</button>
+    </div>
 </div>
+  
 <script>
  let foodIds = [];
 const token = localStorage.getItem("token");
@@ -986,15 +951,18 @@ async function acceptFood(id) {
     });
 
     let data = await res.json();
+    console.log("Status:", res.status);
+    console.log("Response Data:", data);
 
     // Distance warning
     if (!res.ok && data.requireOverride) {
 
-      const confirmAccept = confirm(
-        `${data.message}\n\nDo you still want to accept this food?`
-      );
+      const confirmAccept = await showConfirm(
+    "Distance Warning",
+    `${data.message}\n\nDo you still want to accept this food?`
+);
 
-      if (!confirmAccept) return;
+if (!confirmAccept) return;
 
       // Accept with override
       res = await fetch(
@@ -1059,22 +1027,29 @@ async function handleAccept(id) {
 
     // 🔥 TOO FAR CASE (NEW UI)
     if (!res.ok && data.requireOverride) {
+      console.log(data);
+      const confirmed = await showConfirm(
+    "Distance Warning",
+    `${data.message}. Accept anyway?`
+);
 
-      showConfirm(data.message + ". Accept anyway?", async () => {
+if (!confirmed) return;
 
-        await fetch(`http://localhost:5000/api/food/accept-request/${id}?override=true`, {
-          method: "PUT",
-          headers: {
+await fetch(
+    `http://localhost:5000/api/food/accept-request/${id}?override=true`,
+    {
+        method: "PUT",
+        headers: {
             "Content-Type": "application/json",
             Authorization: "Bearer " + token
-          }
-        });
+        }
+    }
+);
 
-        showToast("⏳ Waiting for NGO confirmation...");
-        loadFood();
-      });
+showToast("Waiting for NGO confirmation...", "info");
+loadFood();
 
-      return;
+return;
     }
 
     if (!res.ok) {
@@ -1205,21 +1180,27 @@ function showToast(message, type = "success") {
 }
 let confirmCallback = null;
 
-function showConfirm(message, onYes) {
-  const box = document.getElementById("confirmBox");
-  document.getElementById("confirmMessage").innerText = message;
+function showConfirm(title, message) {
 
-  confirmCallback = onYes;
-  box.style.display = "block";
+    document.getElementById("confirmTitle").innerText = title;
+    document.getElementById("confirmMessage").innerText = message;
+    document.getElementById("confirmBox").style.display = "block";
+    return new Promise((resolve) => {
+        confirmCallback = resolve;
+    });
 }
 
 function confirmYes() {
-  document.getElementById("confirmBox").style.display = "none";
-  if (confirmCallback) confirmCallback();
+
+    document.getElementById("confirmBox").style.display = "none";
+    confirmCallback(true);
+
 }
 
 function confirmNo() {
-  document.getElementById("confirmBox").style.display = "none";
+    document.getElementById("confirmBox").style.display = "none";
+    confirmCallback(false);
+
 }
 // CLOSE ON CLICK
 document.getElementById("imageModal").addEventListener("click", function () {
@@ -1275,7 +1256,7 @@ async function confirmPickup(foodId) {
             }
         );
         const data = await res.json();
-        alert(data.message);
+        showToast(data.message);
         loadDashboard();
     } catch (err) {
         console.error(err);
@@ -1295,7 +1276,7 @@ async function reachedRestaurant(foodId) {
       }
     );
     const data = await res.json();
-    alert(data.message);
+    showToast(data.message);
     loadDashboard();
   } 
   catch (err) {
@@ -1314,13 +1295,15 @@ async function reachedNgo(foodId) {
       }
     );
     const data = await res.json();
-    alert(data.message);
+    showToast(data.message);
     loadDashboard();
   } catch (err) {
     console.error(err);
   }
 }
 </script>
+<script src="notification.js"></script>
 </div>
+<div id="toast-container"></div>
 </body>
 </html>

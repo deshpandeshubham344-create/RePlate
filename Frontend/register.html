@@ -2,7 +2,7 @@
 <html>
 <head>
   <title>Register - RePlate</title>
-
+  <link rel="stylesheet" href="notification.css">
   <style>
 * {
   margin: 0;
@@ -292,6 +292,7 @@ button:active {
 let selectedLat = null;
 let selectedLng = null;
 let selectedAddress = "";
+let selectedArea = "";
 
 function enableAutoSearch(inputId, suggestionId, callback) {
     // Get the input element (searchAddress, landmark, etc.)
@@ -454,9 +455,13 @@ async function searchLocation(inputId, suggestionId, selectCallback) {
         return;
     }
     try {
-        const res = await fetch(
-            `http://localhost:5000/api/location/search?q=${encodeURIComponent(query)}`
-        );
+          let url =
+          `http://localhost:5000/api/location/search?q=${encodeURIComponent(query)}`;
+          if(inputId === "landmark" && selectedArea){
+          url += `&area=${encodeURIComponent(selectedArea.display_name)}`;
+        }
+
+const res = await fetch(url);
         const places = await res.json();
         showSuggestions(places, suggestionId, selectCallback);
     } catch (err) {
@@ -486,8 +491,10 @@ function selectArea(place){
     selectedLat = Number(place.lat);
     selectedLng = Number(place.lon);
     selectedAddress = place.display_name;
+    selectedArea = place;
 
     document.getElementById("searchAddress").value = place.display_name;
+    document.getElementById("landmark").value = "";
 
     document.getElementById("selectedLocation").innerText =
         "📍 " + place.display_name;
@@ -508,6 +515,7 @@ function goLogin() {
 }
 
 </script>
-
+<script src="notification.js"></script>
+<div id="toast-container"></div>
 </body>
 </html>
