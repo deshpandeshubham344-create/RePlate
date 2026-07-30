@@ -83,19 +83,30 @@ exports.getAvailableFood = async (req, res) => {
     }
 
     const foods = await FoodListing.find({
-      status: { 
-        $in: [
-    "pending",
-    "accepted_by_ngo",
-    "volunteer_requested",
-    "volunteer_assigned",
-    "picked",
-    "completed"
-] 
-      }
-    }).populate("restaurantId")
-.populate("ngoId")
-.populate("volunteerResponses.volunteer")
+      $or: [
+        // Food that any NGO can accept
+        {
+          status: "pending",
+        },
+
+        // Food that belongs to this NGO
+        {
+          ngoId: req.user.id,
+          status: {
+            $in: [
+              "accepted_by_ngo",
+              "volunteer_requested",
+              "volunteer_assigned",
+              "picked",
+              "completed",
+            ],
+          },
+        },
+      ],
+    })
+      .populate("restaurantId")
+      .populate("ngoId")
+      .populate("volunteerResponses.volunteer");
 
     const nearbyFoods = [];
 
@@ -202,6 +213,22 @@ exports.requestVolunteers = async (req, res) => {
       isAvailable: true,
       isBusy: false
     });
+    let nearbyCount = 0;
+
+    volunteers.forEach((volunteer) => {
+    if (!volunteer.location) return;
+
+    const distance = getDistance(
+      food.restaurantLocation.lat,
+      food.restaurantLocation.lng,
+      volunteer.location.lat,
+      volunteer.location.lng,
+    );
+
+  if (distance <= 5) {
+    nearbyCount++;
+  }
+});
 
     // 🔥 Reset previous request
     food.volunteerResponses = [];
@@ -224,12 +251,17 @@ console.log("Saved Status:", verify.status);
     const io = req.app.get("io");
 
     io.emit("newRequest", {
-      foodId: food._id,
-      message: "New delivery request"
-    });
+    foodId: food._id,
+    foodName: food.foodName,
+    quantity: food.quantity,
+    quantityUnit: food.quantityUnit,
+    message: `${food.foodName} (${food.quantity} ${food.quantityUnit}) needs pickup`
+  });
 
     res.json({
-      message: `${volunteers.length} volunteers notified`
+      message: "Volunteer request sent successfully",
+      totalVolunteers: volunteers.length,
+      nearbyVolunteers: nearbyCount,
     });
 
   } catch (err) {
@@ -411,13 +443,35 @@ exports.acceptRequest = async (req, res) => {
     // ETA calculation
     const eta = Math.ceil(dist * 3);
 
+    // Restaurant → NGO
+const restaurantToNgoDistance = getDistance(
+  food.restaurantId.location.lat,
+  food.restaurantId.location.lng,
+  food.ngoId.location.lat,
+  food.ngoId.location.lng,
+);
+
+const restaurantToNgoEta = Math.ceil(restaurantToNgoDistance * 3);
+
+// Total journey
+const totalDistance = dist + restaurantToNgoDistance;
+const totalEta = eta + restaurantToNgoEta;
+
     // Store volunteer response
     food.volunteerResponses.push({
       volunteer: user._id,
       status: "accepted",
+      // Volunteer → Restaurant
       distance: Number(dist.toFixed(2)),
       eta,
-      vehicleType: user.vehicleType
+      // Restaurant → NGO
+      restaurantToNgoDistance: Number(restaurantToNgoDistance.toFixed(2)),
+      restaurantToNgoEta,
+
+      totalDistance: Number(totalDistance.toFixed(2)),
+      totalEta,
+
+      vehicleType: user.vehicleType,
     });
 
     // Store volunteer's latest location
@@ -713,15 +767,24 @@ exports.getVolunteerFood = async (req, res) => {
   console.log("Logged-in Volunteer ID:", req.user.id);
   try {
     const foods = await FoodListing.find({
-      $or: [
-        { requestedVolunteers: req.user.id },
-        { volunteerId: req.user.id }
-      ]
+      $and: [
+        {
+          $or: [
+            { requestedVolunteers: req.user.id },
+            { volunteerId: req.user.id },
+          ],
+        },
+        {
+          status: {
+            $ne: "completed",
+          },
+        },
+      ],
     })
       .populate("restaurantId")
       .populate("ngoId")
       .populate("volunteerId");
-
+      
       console.log("Logged-in Volunteer ID:", req.user.id);
       console.log("Foods Found:", foods.length);
       console.log(foods);

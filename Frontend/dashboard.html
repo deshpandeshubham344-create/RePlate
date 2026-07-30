@@ -291,6 +291,16 @@ button:disabled {
   background: #ef4444;
   color: white;
 }
+.best-choice{
+    display:inline-block;
+    background:#22c55e;
+    color:white;
+    padding:4px 10px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:bold;
+    margin-bottom:10px;
+}
   </style>
 </head>
 <body>
@@ -537,18 +547,35 @@ if (user.role === "ngo") {
 
   } else {
 
-    acceptedVolunteers.forEach(v => {
+    acceptedVolunteers.sort((a, b) => a.totalEta - b.totalEta);
+
+    acceptedVolunteers.forEach((v, index) =>  {
 
       buttons += `
         <div class="volunteer-card">
+           ${index === 0 ? `
+            <span class="best-choice">
+                ⭐ Best Choice
+            </span>
+            ` : ""}
 
           <p><b>Name:</b> ${v.volunteer.name}</p>
 
           <p><b>Vehicle:</b> ${v.vehicleType}</p>
 
-          <p><b>Distance:</b> ${v.distance} km</p>
+          <p>🚴 <b>Volunteer → Restaurant:</b> ${v.distance} km (${v.eta} mins)</p>
 
-          <p><b>ETA:</b> ${v.eta} mins</p>
+          <p>🍱 <b>Restaurant → NGO:</b> ${v.restaurantToNgoDistance} km (${v.restaurantToNgoEta} mins)</p>
+
+        <hr>
+
+        <p style="color:#16a34a;font-weight:bold;">
+          📍 Total Distance: ${v.totalDistance} km
+        </p>
+
+        <p style="color:#2563eb;font-weight:bold;">
+          🕒 Total ETA: ${v.totalEta} mins
+        </p>
 
           <button
             class="btn-primary"
@@ -1007,7 +1034,8 @@ async function requestVolunteers(id) {
   }
 
   showToast(
-  `✅ Request sent to ${data.totalVolunteers} volunteers (${data.nearbyVolunteers} nearby)`
+  `${data.totalVolunteers} volunteers notified • ${data.nearbyVolunteers} are within 5 km`,
+  "success"
 );
   
   loadFood();
