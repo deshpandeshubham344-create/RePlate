@@ -358,8 +358,11 @@ exports.acceptRequest = async (req, res) => {
   try {
 
     const food = await FoodListing.findById(req.params.foodId)
-      .populate("restaurantId");
+      .populate("restaurantId")
+      .populate("ngoId");
 
+      console.log("Restaurant:", food.restaurantId);
+console.log("NGO:", food.ngoId);
     if (!food) {
       return res.status(404).json({
         message: "Food not found"

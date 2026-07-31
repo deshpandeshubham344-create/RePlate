@@ -563,9 +563,9 @@ if (user.role === "ngo") {
 
           <p><b>Vehicle:</b> ${v.vehicleType}</p>
 
-          <p>🚴 <b>Volunteer → Restaurant:</b> ${v.distance} km (${v.eta} mins)</p>
+          <p>🚴 <b>Volunteer → Restaurant:</b> ${v.distance} km (${formatETA(v.eta)})</p>
 
-          <p>🍱 <b>Restaurant → NGO:</b> ${v.restaurantToNgoDistance} km (${v.restaurantToNgoEta} mins)</p>
+          <p>🍱 <b>Restaurant → NGO:</b>${v.restaurantToNgoDistance} km (${formatETA(v.restaurantToNgoEta)})</p>
 
         <hr>
 
@@ -574,7 +574,7 @@ if (user.role === "ngo") {
         </p>
 
         <p style="color:#2563eb;font-weight:bold;">
-          🕒 Total ETA: ${v.totalEta} mins
+          🕒 Total ETA: ${formatETA(v.totalEta)}
         </p>
 
           <button
@@ -1328,6 +1328,21 @@ async function reachedNgo(foodId) {
   } catch (err) {
     console.error(err);
   }
+}
+function formatETA(minutes) {
+
+    if (minutes < 60) {
+        return `${minutes} mins`;
+    }
+
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+
+    if (mins === 0) {
+        return `${hours} hr`;
+    }
+
+    return `${hours} hr ${mins} mins`;
 }
 </script>
 <script src="notification.js"></script>
