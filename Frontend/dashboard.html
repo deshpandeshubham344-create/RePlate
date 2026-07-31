@@ -301,6 +301,84 @@ button:disabled {
     font-weight:bold;
     margin-bottom:10px;
 }
+.delivery-card{
+    background:#ffffff;
+    border-radius:18px;
+    padding:18px;
+    margin:15px 0;
+    box-shadow:0 10px 25px rgba(0,0,0,.08);
+    border:1px solid #eef2ff;
+}
+.delivery-header{
+    margin-bottom:18px;
+}
+.delivery-header h4{
+    color:#2563eb;
+}
+.route{
+    position:relative;
+}
+.route-point{
+    display:flex;
+    align-items:center;
+    position:relative;
+}
+.route-point .icon{
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18px;
+    margin-right:15px;
+    color:white;
+}
+.start .icon{
+    background:#3b82f6;
+}
+.restaurant .icon{
+    background:#f59e0b;
+}
+.ngo .icon{
+    background:#22c55e;
+}
+
+.route-point .text strong{
+    display:block;
+    font-size:15px;
+}
+.route-point .text small{
+    color:#777;
+}
+.route-line{
+    margin-left:20px;
+    border-left:3px dashed #d1d5db;
+    padding:16px 0 16px 38px;
+    color:#555;
+    font-size:14px;
+}
+.journey-box{
+    margin-top:22px;
+    display:flex;
+    justify-content:space-between;
+    gap:15px;
+}
+.journey-item{
+    flex:1;
+    background:#f8fafc;
+    border-radius:12px;
+    text-align:center;
+    padding:15px;
+}
+.journey-item span{
+    color:#666;
+    font-size:13px;
+}
+.journey-item h3{
+    margin-top:6px;
+    color:#2563eb;
+}
   </style>
 </head>
 <body>
@@ -658,7 +736,55 @@ if (user.role === "volunteer") {
 
     // Volunteer has not responded yet
     if (!myResponse) {
+    buttons += `
+<div class="delivery-card">
+    <div class="delivery-header">
+        <h4>🍱 Delivery Route</h4>
+    </div
+    <div class="route">
+        <div class="route-point start">
+            <div class="icon">📍</div>
+            <div class="text">
+                <strong>Your Location</strong>
+                <small>Starting Point</small>
+            </div>
+        </div>
+        <div class="route-line">
+            🚴 ${food.volunteerDistance.toFixed(2)} km • ${formatETA(food.volunteerEta)}
+        </div>
+        <div class="route-point restaurant">
+            <div class="icon">🏪</div>
+            <div class="text">
+                <strong>Restaurant</strong>
+                <small>Pick Up Food</small>
+            </div>
+        </div>
+        <div class="route-line">
+            🍱 ${food.restaurantToNgoDistance.toFixed(2)} km • ${formatETA(food.restaurantToNgoEta)}
+        </div>
+        <div class="route-point ngo">
+            <div class="icon">🎯</div>
+            <div class="text">
+                <strong>NGO</strong>
+                <small>Deliver Food</small>
+            </div>
+        </div>
+    </div>
 
+    <div class="journey-box">
+        <div class="journey-item">
+            <span>Total Distance</span>
+            <h3>${food.totalDistance.toFixed(2)} km</h3>
+        </div>
+
+        <div class="journey-item">
+            <span>Estimated Time</span>
+            <h3>${formatETA(food.totalEta)}</h3>
+        </div>
+    </div>
+</div>
+`;     
+ 
       buttons += `
         <button class="btn-primary"
           onclick="handleAccept('${food._id}')">

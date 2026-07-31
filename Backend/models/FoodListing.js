@@ -29,7 +29,16 @@ const foodListingSchema = new mongoose.Schema(
       lat: { type: Number, required: true },
       lng: { type: Number, required: true },
     },
+   
+    restaurantToNgoDistance: {
+      type: Number,
+      default: 0,
+    },
 
+    restaurantToNgoEta: {
+      type: Number,
+      default: 0,
+    },
     // ✅ ONLY ONE currentLocation
     volunteerCurrentLocation: {
       lat: { type: Number, default: null },

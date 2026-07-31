@@ -174,7 +174,16 @@ exports.acceptFoodRequest = async (req, res) => {
 
     food.status = "accepted_by_ngo";
     food.ngoId = req.user.id;
+      const restaurantToNgoDistance = getDistance(
+        food.restaurantLocation.lat,
+        food.restaurantLocation.lng,
+        ngo.location.lat,
+        ngo.location.lng,
+      );
 
+      food.restaurantToNgoDistance = Number(restaurantToNgoDistance.toFixed(2));
+
+      food.restaurantToNgoEta = Math.ceil(restaurantToNgoDistance * 3);
     await food.save();
 
     res.json({
@@ -788,10 +797,56 @@ exports.getVolunteerFood = async (req, res) => {
       .populate("ngoId")
       .populate("volunteerId");
       
+      const updatedFoods = [];
+
+
       console.log("Logged-in Volunteer ID:", req.user.id);
+      const volunteer = await User.findById(req.user.id);
+
+      if (!volunteer || !volunteer.location) {
+          return res.status(400).json({
+          message: "Volunteer location missing",
+         });
+      }
       console.log("Foods Found:", foods.length);
       console.log(foods);
-    res.json({ foodListings: foods });
+    for (const food of foods) {
+      let volunteerDistance = null;
+      let volunteerEta = null;
+      let totalDistance = null;
+      let totalEta = null;
+
+      // Only calculate if the volunteer hasn't accepted yet
+      const myResponse = food.volunteerResponses.find(
+        (v) => String(v.volunteer) === String(req.user.id),
+      );
+
+      if (!myResponse) {
+        volunteerDistance = getDistance(
+          volunteer.location.lat,
+          volunteer.location.lng,
+          food.restaurantLocation.lat,
+          food.restaurantLocation.lng,
+        );
+
+        volunteerDistance = Number(volunteerDistance.toFixed(2));
+        volunteerEta = Math.ceil(volunteerDistance * 3);
+        totalDistance = volunteerDistance + food.restaurantToNgoDistance;
+        totalEta = volunteerEta + food.restaurantToNgoEta;
+      }
+
+      updatedFoods.push({
+        ...food._doc,
+        volunteerDistance,
+        volunteerEta,
+        totalDistance,
+        totalEta,
+      });
+    }
+
+    res.json({
+      foodListings: updatedFoods,
+    });
 
   } catch {
     res.status(500).json({ message: "Error" });
