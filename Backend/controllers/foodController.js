@@ -222,6 +222,12 @@ exports.requestVolunteers = async (req, res) => {
       isAvailable: true,
       isBusy: false
     });
+    if (volunteers.length === 0) {
+  return res.status(200).json({
+    noVolunteers: true,
+    message: "No volunteers available right now."
+  });
+}
     let nearbyCount = 0;
 
     volunteers.forEach((volunteer) => {

@@ -291,93 +291,131 @@ button:disabled {
   background: #ef4444;
   color: white;
 }
-.best-choice{
-    display:inline-block;
-    background:#22c55e;
-    color:white;
-    padding:4px 10px;
-    border-radius:20px;
-    font-size:12px;
-    font-weight:bold;
-    margin-bottom:10px;
-}
-.delivery-card{
-    background:#ffffff;
+.volunteer-card{
+    background:#fff;
     border-radius:18px;
-    padding:18px;
-    margin:15px 0;
+    padding:20px;
+    margin:20px 0;
     box-shadow:0 10px 25px rgba(0,0,0,.08);
-    border:1px solid #eef2ff;
-}
-.delivery-header{
-    margin-bottom:18px;
-}
-.delivery-header h4{
-    color:#2563eb;
-}
-.route{
+    border:1px solid #e5e7eb;
     position:relative;
-}
-.route-point{
-    display:flex;
-    align-items:center;
-    position:relative;
-}
-.route-point .icon{
-    width:42px;
-    height:42px;
-    border-radius:50%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:18px;
-    margin-right:15px;
-    color:white;
-}
-.start .icon{
-    background:#3b82f6;
-}
-.restaurant .icon{
-    background:#f59e0b;
-}
-.ngo .icon{
-    background:#22c55e;
 }
 
-.route-point .text strong{
-    display:block;
-    font-size:15px;
+.best-choice{
+    position:absolute;
+    top:15px;
+    right:15px;
+    background:#22c55e;
+    color:#fff;
+    padding:6px 12px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:600;
 }
-.route-point .text small{
-    color:#777;
-}
-.route-line{
-    margin-left:20px;
-    border-left:3px dashed #d1d5db;
-    padding:16px 0 16px 38px;
-    color:#555;
-    font-size:14px;
-}
-.journey-box{
-    margin-top:22px;
+
+.volunteer-header{
     display:flex;
-    justify-content:space-between;
+    align-items:center;
     gap:15px;
+    margin-bottom:20px;
 }
-.journey-item{
+
+.volunteer-avatar{
+    width:55px;
+    height:55px;
+    border-radius:50%;
+    background:#2563eb;
+    color:#fff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:24px;
+}
+
+.summary-box{
+    display:flex;
+    gap:15px;
+    margin-bottom:20px;
+}
+
+.summary-item{
     flex:1;
     background:#f8fafc;
     border-radius:12px;
     text-align:center;
     padding:15px;
 }
-.journey-item span{
+
+.summary-item small{
     color:#666;
-    font-size:13px;
 }
-.journey-item h3{
+
+.summary-item h2{
     margin-top:6px;
     color:#2563eb;
+}
+
+.route-timeline{
+    margin-top:15px;
+}
+
+.route-point{
+    display:flex;
+    align-items:center;
+    gap:15px;
+}
+
+.icon{
+    width:38px;
+    height:38px;
+    border-radius:50%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+   color:white;
+}
+
+.start .icon{
+    background:#3b82f6;
+}
+
+.restaurant .icon{
+    background:#f59e0b;
+}
+
+.ngo .icon{
+    background:#22c55e;
+}
+
+.route-line{
+    margin-left:18px;
+    border-left:3px dashed #d1d5db;
+    padding:16px 0 16px 34px;
+    color:#555;
+}
+
+.assign-btn{
+    margin-top:22px;
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:12px;
+    background:#2563eb;
+    color:white;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.assign-btn:hover{
+    background:#1d4ed8;
+    transform:translateY(-2px);
+}
+.volunteer-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(360px,1fr));
+    gap:20px;
 }
   </style>
 </head>
@@ -630,43 +668,99 @@ if (user.role === "ngo") {
     acceptedVolunteers.forEach((v, index) =>  {
 
       buttons += `
-        <div class="volunteer-card">
-           ${index === 0 ? `
-            <span class="best-choice">
-                ⭐ Best Choice
-            </span>
-            ` : ""}
+<div class="volunteer-grid"">
 
-          <p><b>Name:</b> ${v.volunteer.name}</p>
+    ${index === 0 ? `
+        <span class="best-choice">
+            ⭐ Recommended
+        </span>
+    ` : ""}
 
-          <p><b>Vehicle:</b> ${v.vehicleType}</p>
+    <div class="volunteer-header">
 
-          <p>🚴 <b>Volunteer → Restaurant:</b> ${v.distance} km (${formatETA(v.eta)})</p>
+        <div class="volunteer-avatar">
+            👤
+        </div>
 
-          <p>🍱 <b>Restaurant → NGO:</b>${v.restaurantToNgoDistance} km (${formatETA(v.restaurantToNgoEta)})</p>
+        <div>
+            <h3>${v.volunteer.name}</h3>
+            <span>🚴 ${v.vehicleType}</span>
+        </div>
 
-        <hr>
+    </div>
 
-        <p style="color:#16a34a;font-weight:bold;">
-          📍 Total Distance: ${v.totalDistance} km
-        </p>
+    <div class="summary-box">
 
-        <p style="color:#2563eb;font-weight:bold;">
-          🕒 Total ETA: ${formatETA(v.totalEta)}
-        </p>
+        <div class="summary-item">
+            <small>Total Distance</small>
+            <h2>${v.totalDistance} km</h2>
+        </div>
 
-          <button
-            class="btn-primary"
-            onclick="assignVolunteer('${food._id}','${v.volunteer._id}')">
+        <div class="summary-item">
+            <small>Estimated Time</small>
+            <h2>${formatETA(v.totalEta)}</h2>
+        </div>
 
-            Assign Volunteer
+    </div>
 
-          </button>
+    <div class="route-timeline">
+
+        <div class="route-point">
+
+            <div class="route-icon volunteer">
+                👤
+            </div>
+
+            <div class="route-text">
+                <strong>Volunteer</strong>
+            </div>
 
         </div>
 
-        <hr>
-      `;
+        <div class="route-line">
+            🚴 ${v.distance} km • ${formatETA(v.eta)}
+        </div>
+
+        <div class="route-point">
+
+            <div class="route-icon restaurant">
+                🏪
+            </div>
+
+            <div class="route-text">
+                <strong>Restaurant</strong>
+            </div>
+
+        </div>
+
+        <div class="route-line">
+            🍱 ${v.restaurantToNgoDistance} km • ${formatETA(v.restaurantToNgoEta)}
+        </div>
+
+        <div class="route-point">
+
+            <div class="route-icon ngo">
+                🎯
+            </div>
+
+            <div class="route-text">
+                <strong>NGO</strong>
+            </div>
+
+        </div>
+
+    </div>
+
+    <button
+        class="assign-btn"
+        onclick="assignVolunteer('${food._id}','${v.volunteer._id}')">
+
+        🚚 Assign Volunteer
+
+    </button>
+
+</div>
+`;
 
     });
 
@@ -736,12 +830,16 @@ if (user.role === "volunteer") {
 
     // Volunteer has not responded yet
     if (!myResponse) {
-    buttons += `
+    
+      buttons += `
 <div class="delivery-card">
+
     <div class="delivery-header">
         <h4>🍱 Delivery Route</h4>
-    </div
+    </div>
+
     <div class="route">
+
         <div class="route-point start">
             <div class="icon">📍</div>
             <div class="text">
@@ -749,9 +847,11 @@ if (user.role === "volunteer") {
                 <small>Starting Point</small>
             </div>
         </div>
+
         <div class="route-line">
             🚴 ${food.volunteerDistance.toFixed(2)} km • ${formatETA(food.volunteerEta)}
         </div>
+
         <div class="route-point restaurant">
             <div class="icon">🏪</div>
             <div class="text">
@@ -759,9 +859,11 @@ if (user.role === "volunteer") {
                 <small>Pick Up Food</small>
             </div>
         </div>
+
         <div class="route-line">
             🍱 ${food.restaurantToNgoDistance.toFixed(2)} km • ${formatETA(food.restaurantToNgoEta)}
         </div>
+
         <div class="route-point ngo">
             <div class="icon">🎯</div>
             <div class="text">
@@ -769,9 +871,11 @@ if (user.role === "volunteer") {
                 <small>Deliver Food</small>
             </div>
         </div>
+
     </div>
 
     <div class="journey-box">
+
         <div class="journey-item">
             <span>Total Distance</span>
             <h3>${food.totalDistance.toFixed(2)} km</h3>
@@ -781,32 +885,33 @@ if (user.role === "volunteer") {
             <span>Estimated Time</span>
             <h3>${formatETA(food.totalEta)}</h3>
         </div>
+
     </div>
+
+    <!-- 👇 Move buttons here -->
+
+    <div class="action-buttons">
+
+        <button
+            class="btn-primary"
+            onclick="handleAccept('${food._id}')">
+
+            ✅ Accept
+
+        </button>
+
+        <button
+            class="btn-danger"
+            onclick="rejectRequest('${food._id}')">
+
+            ❌ Reject
+
+        </button>
+
+    </div>
+
 </div>
-`;     
- 
-      buttons += `
-        <button class="btn-primary"
-          onclick="handleAccept('${food._id}')">
-          Accept
-        </button>
-
-        <button class="btn-danger"
-          onclick="rejectRequest('${food._id}')">
-          Reject
-        </button>
-      `;
-
-    }
-
-    // Volunteer already accepted
-    else if (myResponse.status === "accepted") {
-
-      buttons += `
-        <p style="color:orange;font-weight:bold;">
-          ⏳ Waiting for NGO confirmation...
-        </p>
-      `;
+`;
 
     }
 
